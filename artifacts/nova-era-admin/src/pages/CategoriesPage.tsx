@@ -42,7 +42,7 @@ import {
   useDeleteCategory,
 } from "@workspace/api-client-react";
 
-import type { Category } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Category } from "@workspace/api-client-react";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),

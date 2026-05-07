@@ -50,7 +50,7 @@ import {
   useDeletePromotion,
 } from "@workspace/api-client-react";
 
-import type { Promotion } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Promotion } from "@workspace/api-client-react";
 
 const promotionSchema = z.object({
   name: z.string().min(1, "Name is required"),

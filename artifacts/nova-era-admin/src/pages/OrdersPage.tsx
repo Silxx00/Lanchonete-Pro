@@ -27,7 +27,7 @@ import {
   useUpdateOrder,
 } from "@workspace/api-client-react";
 
-import type { Order } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Order } from "@workspace/api-client-react";
 
 const STATUSES = ['all', 'pending', 'accepted', 'preparing', 'ready', 'delivered', 'cancelled'];
 
@@ -36,11 +36,10 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const { data: orders, isLoading } = useListOrders({
-    query: {
-      queryKey: getListOrdersQueryKey({ status: activeTab === 'all' ? undefined : activeTab }),
-    }
-  });
+  const { data: orders, isLoading } = useListOrders(
+    { status: activeTab === 'all' ? undefined : activeTab },
+    { query: { queryKey: getListOrdersQueryKey({ status: activeTab === 'all' ? undefined : activeTab }) } }
+  );
 
   const updateMutation = useUpdateOrder();
 
@@ -186,7 +185,7 @@ export default function OrdersPage() {
             <div className="p-6">
               <h4 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wider">Order Items</h4>
               <div className="space-y-4">
-                {selectedOrder.items.map(item => (
+                {selectedOrder.items.map((item: { id: number; quantity: number; productName: string; totalPrice: number }) => (
                   <div key={item.id} className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div className="bg-muted text-muted-foreground w-8 h-8 rounded flex items-center justify-center font-bold text-sm">

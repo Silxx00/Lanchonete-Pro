@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { createHash } from "crypto";
 import { db, usersTable } from "@workspace/db";
+import { hashPassword } from "../lib/password";
+import { auditLog } from "../lib/audit";
+import { requireAuth, requireAdmin, type AuthRequest } from "../middleware/auth";
 import {
   CreateUserBody,
   UpdateUserBody,
@@ -15,10 +17,6 @@ import {
 
 const router: IRouter = Router();
 
-function hashPassword(password: string): string {
-  return createHash("sha256").update(password + "nova-era-salt").digest("hex");
-}
-
 function toUserDto(user: typeof usersTable.$inferSelect) {
   return {
     id: user.id,
@@ -31,12 +29,12 @@ function toUserDto(user: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/users", async (_req, res): Promise<void> => {
+router.get("/users", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
   const users = await db.select().from(usersTable).orderBy(usersTable.createdAt);
   res.json(ListUsersResponse.parse(users.map(toUserDto)));
 });
 
-router.post("/users", async (req, res): Promise<void> => {
+router.post("/users", requireAuth, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
   const parsed = CreateUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -45,12 +43,13 @@ router.post("/users", async (req, res): Promise<void> => {
   const { name, email, password, role } = parsed.data;
   const [user] = await db
     .insert(usersTable)
-    .values({ name, email, passwordHash: hashPassword(password), role })
+    .values({ name, email, passwordHash: await hashPassword(password), role })
     .returning();
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "user", entityId: user.id, details: { name, email, role }, req });
   res.status(201).json(GetUserResponse.parse(toUserDto(user)));
 });
 
-router.get("/users/:id", async (req, res): Promise<void> => {
+router.get("/users/:id", requireAuth, requireAdmin, async (req, res): Promise<void> => {
   const params = GetUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -64,7 +63,7 @@ router.get("/users/:id", async (req, res): Promise<void> => {
   res.json(GetUserResponse.parse(toUserDto(user)));
 });
 
-router.patch("/users/:id", async (req, res): Promise<void> => {
+router.patch("/users/:id", requireAuth, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
   const params = UpdateUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -91,13 +90,18 @@ router.patch("/users/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Usuário não encontrado" });
     return;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "update", entity: "user", entityId: user.id, details: updateData, req });
   res.json(UpdateUserResponse.parse(toUserDto(user)));
 });
 
-router.delete("/users/:id", async (req, res): Promise<void> => {
+router.delete("/users/:id", requireAuth, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
   const params = DeleteUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+  if (params.data.id === req.user!.sub) {
+    res.status(400).json({ error: "Você não pode excluir sua própria conta" });
     return;
   }
   const [user] = await db.delete(usersTable).where(eq(usersTable.id, params.data.id)).returning();
@@ -105,6 +109,7 @@ router.delete("/users/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Usuário não encontrado" });
     return;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "delete", entity: "user", entityId: params.data.id, req });
   res.sendStatus(204);
 });
 

@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ilike, sql } from "drizzle-orm";
+import { eq, and, ilike } from "drizzle-orm";
 import { db, productsTable, categoriesTable } from "@workspace/db";
+import { auditLog } from "../lib/audit";
+import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
 import {
   CreateProductBody,
   UpdateProductBody,
@@ -35,7 +37,7 @@ function toProductDto(
   };
 }
 
-router.get("/products", async (req, res): Promise<void> => {
+router.get("/products", requireAuth, async (req, res): Promise<void> => {
   const queryParams = ListProductsQueryParams.safeParse(req.query);
   if (!queryParams.success) {
     res.status(400).json({ error: queryParams.error.message });
@@ -44,34 +46,21 @@ router.get("/products", async (req, res): Promise<void> => {
   const { categoryId, search, active } = queryParams.data;
 
   const conditions = [];
-  if (categoryId != null) {
-    conditions.push(eq(productsTable.categoryId, categoryId));
-  }
-  if (search) {
-    conditions.push(ilike(productsTable.name, `%${search}%`));
-  }
-  if (active != null) {
-    const isActive = active === "true";
-    conditions.push(eq(productsTable.active, isActive));
-  }
+  if (categoryId != null) conditions.push(eq(productsTable.categoryId, categoryId));
+  if (search) conditions.push(ilike(productsTable.name, `%${search}%`));
+  if (active != null) conditions.push(eq(productsTable.active, active === "true"));
 
   const products = await db
-    .select({
-      product: productsTable,
-      categoryName: categoriesTable.name,
-    })
+    .select({ product: productsTable, categoryName: categoriesTable.name })
     .from(productsTable)
     .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(productsTable.name);
 
-  const result = products.map(({ product, categoryName }) =>
-    toProductDto(product, categoryName)
-  );
-  res.json(ListProductsResponse.parse(result));
+  res.json(ListProductsResponse.parse(products.map(({ product, categoryName }) => toProductDto(product, categoryName))));
 });
 
-router.post("/products", async (req, res): Promise<void> => {
+router.post("/products", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const parsed = CreateProductBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -93,16 +82,14 @@ router.post("/products", async (req, res): Promise<void> => {
 
   let categoryName: string | null = null;
   if (product.categoryId) {
-    const [cat] = await db
-      .select()
-      .from(categoriesTable)
-      .where(eq(categoriesTable.id, product.categoryId));
+    const [cat] = await db.select().from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
     categoryName = cat?.name ?? null;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "product", entityId: product.id, details: { name: product.name }, req });
   res.status(201).json(GetProductResponse.parse(toProductDto(product, categoryName)));
 });
 
-router.get("/products/:id", async (req, res): Promise<void> => {
+router.get("/products/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -121,7 +108,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
   res.json(GetProductResponse.parse(toProductDto(row.product, row.categoryName)));
 });
 
-router.patch("/products/:id", async (req, res): Promise<void> => {
+router.patch("/products/:id", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const params = UpdateProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -155,29 +142,25 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
 
   let categoryName: string | null = null;
   if (product.categoryId) {
-    const [cat] = await db
-      .select()
-      .from(categoriesTable)
-      .where(eq(categoriesTable.id, product.categoryId));
+    const [cat] = await db.select().from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
     categoryName = cat?.name ?? null;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "update", entity: "product", entityId: product.id, details: updateData, req });
   res.json(UpdateProductResponse.parse(toProductDto(product, categoryName)));
 });
 
-router.delete("/products/:id", async (req, res): Promise<void> => {
+router.delete("/products/:id", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const params = DeleteProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [product] = await db
-    .delete(productsTable)
-    .where(eq(productsTable.id, params.data.id))
-    .returning();
+  const [product] = await db.delete(productsTable).where(eq(productsTable.id, params.data.id)).returning();
   if (!product) {
     res.status(404).json({ error: "Produto não encontrado" });
     return;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "delete", entity: "product", entityId: params.data.id, details: { name: product.name }, req });
   res.sendStatus(204);
 });
 

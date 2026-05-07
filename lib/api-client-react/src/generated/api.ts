@@ -34,6 +34,8 @@ import type {
   Order,
   Product,
   Promotion,
+  RefreshTokenBody,
+  RefreshTokenResponse,
   SalesChartPoint,
   TopProduct,
   UpdateCategoryBody,
@@ -293,6 +295,92 @@ export const useLogout = <
   TContext
 > => {
   return useMutation(getLogoutMutationOptions(options));
+};
+
+/**
+ * @summary Refresh access token
+ */
+export const getRefreshTokenUrl = () => {
+  return `/api/auth/refresh`;
+};
+
+export const refreshToken = async (
+  refreshTokenBody: RefreshTokenBody,
+  options?: RequestInit,
+): Promise<RefreshTokenResponse> => {
+  return customFetch<RefreshTokenResponse>(getRefreshTokenUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(refreshTokenBody),
+  });
+};
+
+export const getRefreshTokenMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshToken>>,
+    TError,
+    { data: BodyType<RefreshTokenBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof refreshToken>>,
+  TError,
+  { data: BodyType<RefreshTokenBody> },
+  TContext
+> => {
+  const mutationKey = ["refreshToken"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refreshToken>>,
+    { data: BodyType<RefreshTokenBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return refreshToken(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RefreshTokenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refreshToken>>
+>;
+export type RefreshTokenMutationBody = BodyType<RefreshTokenBody>;
+export type RefreshTokenMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Refresh access token
+ */
+export const useRefreshToken = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshToken>>,
+    TError,
+    { data: BodyType<RefreshTokenBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof refreshToken>>,
+  TError,
+  { data: BodyType<RefreshTokenBody> },
+  TContext
+> => {
+  return useMutation(getRefreshTokenMutationOptions(options));
 };
 
 /**

@@ -1,44 +1,48 @@
-import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Package, 
-  Tags, 
-  ShoppingCart, 
-  TicketPercent, 
+import {
+  LayoutDashboard,
+  Package,
+  Tags,
+  ShoppingCart,
+  TicketPercent,
   Users,
-  Menu,
-  X
+  X,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoPath from "@assets/Screenshot_20260507_062530_Instagram_1778164969419.png";
 import { Button } from "@/components/ui/button";
+import { usePermission } from "@/hooks/usePermission";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Orders", href: "/orders", icon: ShoppingCart },
-  { name: "Products", href: "/products", icon: Package },
-  { name: "Categories", href: "/categories", icon: Tags },
-  { name: "Promotions", href: "/promotions", icon: TicketPercent },
-  { name: "Users", href: "/users", icon: Users },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, minLevel: 1 },
+  { name: "Pedidos", href: "/orders", icon: ShoppingCart, minLevel: 1 },
+  { name: "Produtos", href: "/products", icon: Package, minLevel: 1 },
+  { name: "Categorias", href: "/categories", icon: Tags, minLevel: 1 },
+  { name: "Promoções", href: "/promotions", icon: TicketPercent, minLevel: 2 },
+  { name: "Usuários", href: "/users", icon: Users, minLevel: 3 },
 ];
 
-export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (o: boolean) => void }) {
+const ROLE_LEVELS: Record<string, number> = { admin: 3, manager: 2, employee: 1 };
+
+export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (o: boolean) => void }) {
   const [location] = useLocation();
+  const { role } = usePermission();
+  const userLevel = ROLE_LEVELS[role] ?? 0;
+
+  const visibleItems = navItems.filter((item) => userLevel >= item.minLevel);
 
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/80 md:hidden backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <motion.aside 
+      <motion.aside
         initial={{ x: -280 }}
         animate={{ x: mobileOpen ? 0 : 0 }}
         className={cn(
@@ -56,11 +60,11 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, se
           </Button>
         </div>
 
-        <div className="flex-1 py-6 px-3 flex flex-col gap-2 overflow-y-auto">
+        <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
           <div className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Menu
           </div>
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = location === item.href || location.startsWith(`${item.href}/`);
             return (
               <Link key={item.name} href={item.href}>
@@ -69,8 +73,8 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, se
                   whileTap={{ scale: 0.98 }}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                    isActive 
-                      ? "bg-primary text-primary-foreground" 
+                    isActive
+                      ? "bg-primary text-primary-foreground"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
@@ -80,6 +84,15 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, se
               </Link>
             );
           })}
+        </div>
+
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sidebar-accent/50">
+            <Shield className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground capitalize">
+              {role === "admin" ? "Administrador" : role === "manager" ? "Gerente" : "Funcionário"}
+            </span>
+          </div>
         </div>
       </motion.aside>
     </>

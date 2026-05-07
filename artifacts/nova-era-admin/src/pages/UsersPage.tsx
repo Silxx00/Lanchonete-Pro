@@ -49,7 +49,7 @@ import {
   useGetMe,
 } from "@workspace/api-client-react";
 
-import type { User } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { User } from "@workspace/api-client-react";
 
 const userSchema = z.object({
   name: z.string().min(2, "Name is required"),

@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, promotionsTable } from "@workspace/db";
+import { auditLog } from "../lib/audit";
+import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
 import {
   CreatePromotionBody,
   UpdatePromotionBody,
@@ -33,15 +35,12 @@ function toPromotionDto(p: typeof promotionsTable.$inferSelect) {
   };
 }
 
-router.get("/promotions", async (_req, res): Promise<void> => {
-  const promotions = await db
-    .select()
-    .from(promotionsTable)
-    .orderBy(promotionsTable.createdAt);
+router.get("/promotions", requireAuth, async (_req, res): Promise<void> => {
+  const promotions = await db.select().from(promotionsTable).orderBy(promotionsTable.createdAt);
   res.json(ListPromotionsResponse.parse(promotions.map(toPromotionDto)));
 });
 
-router.post("/promotions", async (req, res): Promise<void> => {
+router.post("/promotions", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const parsed = CreatePromotionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -62,19 +61,17 @@ router.post("/promotions", async (req, res): Promise<void> => {
       maxUsage: parsed.data.maxUsage ?? null,
     })
     .returning();
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "promotion", entityId: promotion.id, details: { name: promotion.name }, req });
   res.status(201).json(GetPromotionResponse.parse(toPromotionDto(promotion)));
 });
 
-router.get("/promotions/:id", async (req, res): Promise<void> => {
+router.get("/promotions/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetPromotionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [promotion] = await db
-    .select()
-    .from(promotionsTable)
-    .where(eq(promotionsTable.id, params.data.id));
+  const [promotion] = await db.select().from(promotionsTable).where(eq(promotionsTable.id, params.data.id));
   if (!promotion) {
     res.status(404).json({ error: "Promoção não encontrada" });
     return;
@@ -82,7 +79,7 @@ router.get("/promotions/:id", async (req, res): Promise<void> => {
   res.json(GetPromotionResponse.parse(toPromotionDto(promotion)));
 });
 
-router.patch("/promotions/:id", async (req, res): Promise<void> => {
+router.patch("/promotions/:id", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const params = UpdatePromotionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -117,23 +114,22 @@ router.patch("/promotions/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Promoção não encontrada" });
     return;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "update", entity: "promotion", entityId: promotion.id, details: updateData, req });
   res.json(UpdatePromotionResponse.parse(toPromotionDto(promotion)));
 });
 
-router.delete("/promotions/:id", async (req, res): Promise<void> => {
+router.delete("/promotions/:id", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const params = DeletePromotionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [promotion] = await db
-    .delete(promotionsTable)
-    .where(eq(promotionsTable.id, params.data.id))
-    .returning();
+  const [promotion] = await db.delete(promotionsTable).where(eq(promotionsTable.id, params.data.id)).returning();
   if (!promotion) {
     res.status(404).json({ error: "Promoção não encontrada" });
     return;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "delete", entity: "promotion", entityId: params.data.id, req });
   res.sendStatus(204);
 });
 

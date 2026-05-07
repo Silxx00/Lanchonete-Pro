@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, productsTable } from "@workspace/db";
+import { auditLog } from "../lib/audit";
+import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
 import {
   CreateOrderBody,
   UpdateOrderBody,
@@ -16,17 +18,10 @@ import {
 const router: IRouter = Router();
 
 async function getOrderWithItems(orderId: number) {
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.id, orderId));
-
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
   if (!order) return null;
 
-  const items = await db
-    .select()
-    .from(orderItemsTable)
-    .where(eq(orderItemsTable.orderId, orderId));
+  const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, orderId));
 
   return {
     id: order.id,
@@ -49,35 +44,22 @@ async function getOrderWithItems(orderId: number) {
   };
 }
 
-router.get("/orders", async (req, res): Promise<void> => {
+router.get("/orders", requireAuth, async (req, res): Promise<void> => {
   const queryParams = ListOrdersQueryParams.safeParse(req.query);
   if (!queryParams.success) {
     res.status(400).json({ error: queryParams.error.message });
     return;
   }
 
-  let query = db
-    .select()
-    .from(ordersTable)
-    .orderBy(ordersTable.createdAt)
-    .$dynamic();
-
-  if (queryParams.data.status) {
-    query = query.where(eq(ordersTable.status, queryParams.data.status));
-  }
-
-  if (queryParams.data.limit) {
-    query = query.limit(queryParams.data.limit);
-  }
+  let query = db.select().from(ordersTable).orderBy(ordersTable.createdAt).$dynamic();
+  if (queryParams.data.status) query = query.where(eq(ordersTable.status, queryParams.data.status));
+  if (queryParams.data.limit) query = query.limit(queryParams.data.limit);
 
   const orders = await query;
 
   const ordersWithItems = await Promise.all(
     orders.map(async (order) => {
-      const items = await db
-        .select()
-        .from(orderItemsTable)
-        .where(eq(orderItemsTable.orderId, order.id));
+      const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
       return {
         id: order.id,
         customerName: order.customerName,
@@ -103,7 +85,7 @@ router.get("/orders", async (req, res): Promise<void> => {
   res.json(ListOrdersResponse.parse(ordersWithItems));
 });
 
-router.post("/orders", async (req, res): Promise<void> => {
+router.post("/orders", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const parsed = CreateOrderBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -111,45 +93,32 @@ router.post("/orders", async (req, res): Promise<void> => {
   }
 
   const { customerName, customerPhone, notes, items } = parsed.data;
-
-  const total = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0
-  );
+  const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
   const [order] = await db
     .insert(ordersTable)
-    .values({
-      customerName,
-      customerPhone: customerPhone ?? null,
-      notes: notes ?? null,
-      total: String(total),
-      status: "pending",
-    })
+    .values({ customerName, customerPhone: customerPhone ?? null, notes: notes ?? null, total: String(total), status: "pending" })
     .returning();
 
   for (const item of items) {
-    const [product] = await db
-      .select()
-      .from(productsTable)
-      .where(eq(productsTable.id, item.productId));
+    const [product] = await db.select().from(productsTable).where(eq(productsTable.id, item.productId));
     const productName = product?.name ?? "Produto";
-    const totalPrice = item.quantity * item.unitPrice;
     await db.insert(orderItemsTable).values({
       orderId: order.id,
       productId: item.productId,
       productName,
       quantity: item.quantity,
       unitPrice: String(item.unitPrice),
-      totalPrice: String(totalPrice),
+      totalPrice: String(item.quantity * item.unitPrice),
     });
   }
 
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "order", entityId: order.id, details: { customerName, total }, req });
   const orderWithItems = await getOrderWithItems(order.id);
   res.status(201).json(GetOrderResponse.parse(orderWithItems));
 });
 
-router.get("/orders/:id", async (req, res): Promise<void> => {
+router.get("/orders/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -163,7 +132,7 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
   res.json(GetOrderResponse.parse(order));
 });
 
-router.patch("/orders/:id", async (req, res): Promise<void> => {
+router.patch("/orders/:id", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const params = UpdateOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -190,11 +159,12 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "update", entity: "order", entityId: order.id, details: updateData, req });
   const orderWithItems = await getOrderWithItems(order.id);
   res.json(UpdateOrderResponse.parse(orderWithItems));
 });
 
-router.delete("/orders/:id", async (req, res): Promise<void> => {
+router.delete("/orders/:id", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
   const params = DeleteOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -202,15 +172,13 @@ router.delete("/orders/:id", async (req, res): Promise<void> => {
   }
 
   await db.delete(orderItemsTable).where(eq(orderItemsTable.orderId, params.data.id));
-  const [order] = await db
-    .delete(ordersTable)
-    .where(eq(ordersTable.id, params.data.id))
-    .returning();
+  const [order] = await db.delete(ordersTable).where(eq(ordersTable.id, params.data.id)).returning();
 
   if (!order) {
     res.status(404).json({ error: "Pedido não encontrado" });
     return;
   }
+  await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "delete", entity: "order", entityId: params.data.id, req });
   res.sendStatus(204);
 });
 

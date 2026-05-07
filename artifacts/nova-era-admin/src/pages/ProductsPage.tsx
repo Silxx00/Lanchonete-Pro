@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, CheckCircle2, XCircle, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +52,7 @@ import {
   useListCategories,
 } from "@workspace/api-client-react";
 
-import type { Product } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Product } from "@workspace/api-client-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -76,14 +76,10 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const { data: categories } = useListCategories();
-  const { data: products, isLoading } = useListProducts({
-    query: {
-      queryKey: getListProductsQueryKey({ 
-        search: search || undefined, 
-        categoryId: categoryId !== "all" ? Number(categoryId) : undefined 
-      })
-    }
-  });
+  const { data: products, isLoading } = useListProducts(
+    { search: search || undefined, categoryId: categoryId !== "all" ? Number(categoryId) : undefined },
+    { query: { queryKey: getListProductsQueryKey({ search: search || undefined, categoryId: categoryId !== "all" ? Number(categoryId) : undefined }) } }
+  );
 
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();

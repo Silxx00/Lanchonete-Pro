@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Nova Era Lanchonete - Admin"
+version = "1.0.0"
+id = "artifacts/nova-era-admin"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23334
+
+[services.development]
+run = "pnpm --filter @workspace/nova-era-admin run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nova-era-admin", "run", "build" ]
+publicDir = "artifacts/nova-era-admin/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23334"
+BASE_PATH = "/"

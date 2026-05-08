@@ -1,73 +1,80 @@
-# Nova Era Lanchonete — Admin Panel
+# Nova Era Lanchonete — Sistema Administrativo
 
-Sistema administrativo completo para a lanchonete Nova Era. Painel escuro, premium e responsivo para gerenciamento do negócio.
+## Visão Geral
 
-## Run & Operate
+Sistema administrativo profissional para lanchonete/restaurante. Fullstack com autenticação JWT, banco de dados PostgreSQL, painel administrativo com controle de pedidos, produtos, promoções e usuários.
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080, served at /api)
-- `pnpm --filter @workspace/nova-era-admin run dev` — run the admin frontend (port 23334, served at /)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+## Arquitetura
 
-## Stack
+### Frontend — `artifacts/nova-era-admin`
+- React + Vite + TypeScript
+- TailwindCSS v4 — tema escuro preto + azul royal
+- Wouter (roteamento)
+- TanStack Query (estado assíncrono)
+- Framer Motion (animações)
+- Recharts (gráficos)
+- Radix UI / shadcn componentes
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- Frontend: React + Vite, TailwindCSS, Shadcn UI, Framer Motion, Recharts, Wouter
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+### Backend — `artifacts/api-server`
+- Node.js + Express.js v5 + TypeScript
+- Autenticação JWT (access token 15min + refresh token 7 dias)
+- Rate limiting, brute force protection, audit log
+- Build via esbuild, ESM output
 
-## Where things live
+### Banco de Dados — `lib/db`
+- Drizzle ORM + PostgreSQL
+- Schema: users, categories, products, orders, order_items, promotions, refresh_tokens, audit_logs, login_attempts
 
-- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for all endpoints)
-- `lib/db/src/schema/` — Drizzle DB schemas (users, categories, products, orders, promotions)
-- `artifacts/api-server/src/routes/` — Express route handlers
-- `artifacts/nova-era-admin/src/pages/` — Admin frontend pages
-- `artifacts/nova-era-admin/src/components/layout/` — Sidebar, TopBar, AppLayout
-- `lib/api-client-react/src/generated/` — Generated React Query hooks
+### Bibliotecas compartilhadas
+- `lib/api-zod` — schemas Zod para validação das rotas
+- `lib/api-client-react` — hooks React Query gerados do OpenAPI spec
+- `lib/api-spec` — OpenAPI YAML spec
 
-## Architecture decisions
+## Papéis de Usuário
 
-- JWT tokens: access (15min) + refresh (7d), stored in memory Map — replace with Redis for production
-- Passwords hashed with bcrypt (12 rounds)
-- Custom fetch interceptor in `lib/api-client-react/src/custom-fetch.ts` injects Bearer token from localStorage
-- `formatCurrency` in `src/lib/utils.ts` uses `Intl.NumberFormat` with pt-BR locale for R$ formatting
-- The `lib/api-zod/src/index.ts` barrel is rewritten by the codegen script to prevent duplicate export conflicts with orval's generated types
+| Papel | Acesso |
+|-------|--------|
+| `employee` (Funcionário) | Visualiza e atualiza pedidos, vê produtos/categorias |
+| `manager` (Gerente) | Tudo do funcionário + gerencia produtos, categorias e promoções |
+| `admin` (Administrador) | Acesso total, incluindo gerenciamento de usuários |
 
-## Product
+## Configuração de Ambiente
 
-- Login screen with brand identity and JWT auth
-- Dashboard with live stats, sales chart (7-day), top products, recent orders
-- Products CRUD with category filtering and search
-- Categories CRUD
-- Orders management with status tracking (pending → accepted → preparing → ready → delivered / cancelled)
-- Promotions & coupons system (percentage and fixed discounts)
-- User management (admin, manager, employee roles)
+Variáveis necessárias (já configuradas como secrets):
+- `DATABASE_URL` — URL de conexão PostgreSQL
+- `SESSION_SECRET` — Segredo para assinar JWT
+- `PORT` — Porta do servidor (gerenciado automaticamente pela Replit/Railway)
 
-## User preferences
+## Comandos Úteis
 
-- Language: Portuguese (pt-BR) in UI labels and toast messages
-- Currency: R$ (Brazilian Real) with pt-BR formatting
-- Design: dark, premium — Black + Royal Blue palette (primary: hsl(221 83% 53%), bg: hsl(222 35% 4%), sidebar: hsl(222 40% 3%))
-- NO yellow, orange, or red in UI (red only for destructive/error actions)
+```bash
+# Aplicar schema no banco
+pnpm --filter @workspace/db run push
 
-## Gotchas
+# Seed inicial (admin, gerente, funcionário + categorias)
+pnpm --filter @workspace/scripts run seed
 
-- After changing `openapi.yaml`, always run `pnpm --filter @workspace/api-spec run codegen` — the script also rewrites the api-zod barrel to prevent TS2308 duplicate export errors
-- Do NOT add `export * from "./generated/types"` back to `lib/api-zod/src/index.ts` — the codegen script overwrites it intentionally
-- `pnpm --filter @workspace/db run push-force` if push fails with column conflicts
+# Typecheck completo
+pnpm run typecheck
 
-## Default credentials (development seed data)
+# Build de produção
+pnpm run build
+```
 
-- Admin: `admin@novaera.com` / `admin123`
-- Gerente: `gerente@admin.com` / `Gerente123`
-- Funcionário: `funcionario@admin.com` / `Funcionario123`
+## Deploy — Railway
 
-## Pointers
+O projeto está configurado para deploy no Railway via `railway.json`. Para deploy:
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+1. Conectar repositório ao Railway
+2. Configurar variáveis de ambiente: `DATABASE_URL`, `SESSION_SECRET`, `PORT`
+3. O Railway usa Nixpacks para build automaticamente
+4. Para o backend: `pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/api-server run start`
+5. Para o frontend: build estático via `pnpm --filter @workspace/nova-era-admin run build`
+
+## User Preferences
+
+- Idioma: Português (Brasil)
+- Design: Tema escuro, preto + azul royal
+- Código em TypeScript profissional e escalável
+- Arquitetura modular — não simplificar
+- Compatibilidade mobile obrigatória

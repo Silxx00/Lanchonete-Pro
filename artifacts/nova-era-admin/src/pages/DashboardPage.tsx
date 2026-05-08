@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   BarChart, Bar
 } from "recharts";
@@ -13,12 +12,43 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, cn } from "@/lib/utils";
 
-import { 
-  useGetDashboardStats, 
-  useGetSalesChart, 
-  useGetTopProducts, 
-  useGetRecentOrders 
+import {
+  useGetDashboardStats,
+  useGetSalesChart,
+  useGetTopProducts,
+  useGetRecentOrders
 } from "@workspace/api-client-react";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pendente",
+  accepted: "Aceito",
+  preparing: "Preparando",
+  ready: "Pronto",
+  delivered: "Entregue",
+  cancelled: "Cancelado",
+};
+
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "pending":   return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+    case "accepted":  return "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
+    case "preparing": return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+    case "ready":     return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+    case "delivered": return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+    case "cancelled": return "bg-red-500/10 text-red-400 border-red-500/20";
+    default:          return "bg-primary/10 text-primary border-primary/20";
+  }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 28 } }
+};
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
@@ -26,173 +56,134 @@ export default function DashboardPage() {
   const { data: topProducts, isLoading: topProductsLoading } = useGetTopProducts();
   const { data: recentOrders, isLoading: ordersLoading } = useGetRecentOrders();
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'accepted': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'preparing': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-      case 'ready': return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'delivered': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-      case 'cancelled': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-primary/10 text-primary border-primary/20';
-    }
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 max-w-screen-2xl">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Welcome to Nova Era Lanchonete admin panel.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Painel</h1>
+        <p className="text-sm text-muted-foreground mt-1">Visão geral do desempenho da lanchonete</p>
       </div>
 
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
       >
         <motion.div variants={itemVariants}>
-          <Card className="bg-card/50 backdrop-blur-sm border-card-border overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <DollarSign className="w-12 h-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+          <Card className="bg-card border-card-border relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Receita de Hoje</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
-            <CardContent className="relative z-10">
-              {statsLoading ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold">{formatCurrency(stats?.todayRevenue || 0)}</div>
+            <CardContent>
+              {statsLoading ? <Skeleton className="h-7 w-28 mb-1" /> : (
+                <div className="text-2xl font-bold text-foreground">{formatCurrency(stats?.todayRevenue || 0)}</div>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {statsLoading ? <Skeleton className="h-4 w-32 mt-1" /> : `Monthly: ${formatCurrency(stats?.monthRevenue || 0)}`}
+                {statsLoading ? <Skeleton className="h-3.5 w-32 mt-1" /> : `Mensal: ${formatCurrency(stats?.monthRevenue || 0)}`}
               </p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-card/50 backdrop-blur-sm border-card-border overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <ShoppingBag className="w-12 h-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Today's Orders</CardTitle>
+          <Card className="bg-card border-card-border relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pedidos Hoje</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ShoppingBag className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
-            <CardContent className="relative z-10">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                <div className="text-2xl font-bold">{stats?.todayOrders || 0}</div>
+            <CardContent>
+              {statsLoading ? <Skeleton className="h-7 w-16 mb-1" /> : (
+                <div className="text-2xl font-bold text-foreground">{stats?.todayOrders || 0}</div>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {statsLoading ? <Skeleton className="h-4 w-32 mt-1" /> : `Monthly: ${stats?.monthOrders || 0}`}
+                {statsLoading ? <Skeleton className="h-3.5 w-32 mt-1" /> : `Mensal: ${stats?.monthOrders || 0} pedidos`}
               </p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-card/50 backdrop-blur-sm border-card-border overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Clock className="w-12 h-12 text-yellow-500" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+          <Card className="bg-card border-card-border relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aguardando</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-blue-400" />
+              </div>
             </CardHeader>
-            <CardContent className="relative z-10">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                <div className="text-2xl font-bold text-yellow-500">{stats?.pendingOrders || 0}</div>
+            <CardContent>
+              {statsLoading ? <Skeleton className="h-7 w-16 mb-1" /> : (
+                <div className="text-2xl font-bold text-blue-400">{stats?.pendingOrders || 0}</div>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {statsLoading ? <Skeleton className="h-4 w-32 mt-1" /> : "Requires immediate attention"}
+                {statsLoading ? <Skeleton className="h-3.5 w-32 mt-1" /> : "Pedidos pendentes de atenção"}
               </p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-card/50 backdrop-blur-sm border-card-border overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Package className="w-12 h-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+          <Card className="bg-card border-card-border relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Produtos Ativos</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Package className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
-            <CardContent className="relative z-10">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                <div className="text-2xl font-bold">{stats?.activeProducts || 0}</div>
+            <CardContent>
+              {statsLoading ? <Skeleton className="h-7 w-16 mb-1" /> : (
+                <div className="text-2xl font-bold text-foreground">{stats?.activeProducts || 0}</div>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {statsLoading ? <Skeleton className="h-4 w-32 mt-1" /> : `Total products: ${stats?.totalProducts || 0}`}
+                {statsLoading ? <Skeleton className="h-3.5 w-32 mt-1" /> : `Total cadastrado: ${stats?.totalProducts || 0}`}
               </p>
             </CardContent>
           </Card>
         </motion.div>
       </motion.div>
 
-      <div className="grid gap-6 md:grid-cols-7">
-        <Card className="md:col-span-4 bg-card/50 backdrop-blur-sm border-card-border">
-          <CardHeader>
-            <CardTitle>Sales Overview</CardTitle>
-            <CardDescription>Daily revenue for the past 7 days</CardDescription>
+      <div className="grid gap-6 lg:grid-cols-7">
+        <Card className="lg:col-span-4 bg-card border-card-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">Faturamento — Últimos 7 Dias</CardTitle>
+            <CardDescription className="text-xs">Receita diária acumulada</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             {salesLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="h-[280px] flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !salesChart?.length ? (
+              <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground gap-2">
+                <p className="text-sm">Nenhum dado de faturamento disponível</p>
               </div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={salesChart || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <AreaChart data={salesChart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(221 83% 53%)" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="hsl(221 83% 53%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                    <XAxis 
-                      dataKey="label" 
-                      stroke="hsl(var(--muted-foreground))" 
-                      fontSize={12} 
-                      tickLine={false} 
-                      axisLine={false} 
-                      dy={10}
+                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} dy={8} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: "hsl(var(--popover))", borderColor: "hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
+                      formatter={(value: number) => [formatCurrency(value), "Receita"]}
                     />
-                    <YAxis 
-                      stroke="hsl(var(--muted-foreground))" 
-                      fontSize={12} 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tickFormatter={(value) => `R$${value}`}
-                    />
-                    <RechartsTooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
-                      formatter={(value: number) => [formatCurrency(value), 'Revenue']}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={2}
-                      fillOpacity={1} 
-                      fill="url(#colorRevenue)" 
-                    />
+                    <Area type="monotone" dataKey="revenue" stroke="hsl(221 83% 53%)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -200,40 +191,36 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-3 bg-card/50 backdrop-blur-sm border-card-border">
-          <CardHeader>
-            <CardTitle>Top Products</CardTitle>
-            <CardDescription>Best selling items by quantity</CardDescription>
+        <Card className="lg:col-span-3 bg-card border-card-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">Produtos Mais Vendidos</CardTitle>
+            <CardDescription className="text-xs">Por quantidade de vendas</CardDescription>
           </CardHeader>
           <CardContent>
             {topProductsLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="h-[280px] flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !topProducts?.length ? (
+              <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground gap-2">
+                <p className="text-sm">Nenhuma venda registrada</p>
               </div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topProducts || []} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={true} vertical={false} />
+                  <BarChart data={topProducts} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} vertical={true} />
                     <XAxis type="number" hide />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      width={100}
-                      stroke="hsl(var(--foreground))"
-                      fontSize={12}
-                    />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={110} stroke="hsl(var(--muted-foreground))" fontSize={11} />
                     <RechartsTooltip
-                      cursor={{ fill: 'hsl(var(--muted))' }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      cursor={{ fill: "hsl(var(--muted))" }}
+                      contentStyle={{ backgroundColor: "hsl(var(--popover))", borderColor: "hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                       formatter={(value: number, name: string) => [
-                        name === 'totalSold' ? value : formatCurrency(value), 
-                        name === 'totalSold' ? 'Sold' : 'Revenue'
+                        name === "totalSold" ? value : formatCurrency(value),
+                        name === "totalSold" ? "Qtd. vendida" : "Receita"
                       ]}
                     />
-                    <Bar dataKey="totalSold" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={24} />
+                    <Bar dataKey="totalSold" fill="hsl(221 83% 53%)" radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -242,15 +229,15 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="bg-card/50 backdrop-blur-sm border-card-border">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="bg-card border-card-border">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div>
-            <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Latest orders requiring attention</CardDescription>
+            <CardTitle className="text-base font-semibold">Pedidos Recentes</CardTitle>
+            <CardDescription className="text-xs mt-1">Últimos pedidos registrados</CardDescription>
           </div>
           <Link href="/orders">
-            <Button variant="outline" size="sm" className="gap-2">
-              View All <ArrowRight className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="gap-2 text-xs h-8">
+              Ver todos <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
         </CardHeader>
@@ -258,41 +245,39 @@ export default function DashboardPage() {
           {ordersLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
+                <div key={i} className="flex items-center justify-between p-4 border border-border rounded-xl">
+                  <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-32" /></div>
                   <Skeleton className="h-6 w-20" />
                   <Skeleton className="h-4 w-16" />
                 </div>
               ))}
             </div>
-          ) : recentOrders?.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No recent orders found.
+          ) : !recentOrders?.length ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <ShoppingBag className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">Nenhum pedido registrado</p>
+              <p className="text-xs mt-1">Os pedidos aparecerão aqui assim que forem criados</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {recentOrders?.map((order) => (
-                <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg bg-background/50 hover:bg-accent/50 transition-colors">
+            <div className="space-y-2">
+              {recentOrders.map((order) => (
+                <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-xl bg-background/30 hover:bg-accent/30 transition-colors">
                   <div className="flex flex-col gap-1 mb-2 sm:mb-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">Order #{order.id}</span>
-                      <span className="text-muted-foreground">• {order.customerName}</span>
+                      <span className="font-semibold text-foreground text-sm">Pedido #{order.id}</span>
+                      <span className="text-muted-foreground text-sm">• {order.customerName}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <span>{order.items.length} items</span>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span>{order.items.length} {order.items.length === 1 ? "item" : "itens"}</span>
                       <span>•</span>
-                      <span>{new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      <span>{new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
-                  
                   <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                    <Badge variant="outline" className={cn("px-2 py-0.5 rounded-full capitalize border", getStatusColor(order.status))}>
-                      {order.status}
+                    <Badge variant="outline" className={cn("px-2.5 py-0.5 rounded-full text-xs font-medium border", getStatusColor(order.status))}>
+                      {STATUS_LABELS[order.status] ?? order.status}
                     </Badge>
-                    <span className="font-bold">{formatCurrency(order.total)}</span>
+                    <span className="font-bold text-sm text-foreground">{formatCurrency(order.total)}</span>
                   </div>
                 </div>
               ))}

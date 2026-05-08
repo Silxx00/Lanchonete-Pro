@@ -33,8 +33,8 @@ Sistema administrativo completo para a lanchonete Nova Era. Painel escuro, premi
 
 ## Architecture decisions
 
-- JWT tokens stored in memory (Map) in the API server — simple for MVP, replace with Redis for production
-- Passwords hashed with SHA-256 + static salt — replace with bcrypt for production
+- JWT tokens: access (15min) + refresh (7d), stored in memory Map — replace with Redis for production
+- Passwords hashed with bcrypt (12 rounds)
 - Custom fetch interceptor in `lib/api-client-react/src/custom-fetch.ts` injects Bearer token from localStorage
 - `formatCurrency` in `src/lib/utils.ts` uses `Intl.NumberFormat` with pt-BR locale for R$ formatting
 - The `lib/api-zod/src/index.ts` barrel is rewritten by the codegen script to prevent duplicate export conflicts with orval's generated types
@@ -53,7 +53,8 @@ Sistema administrativo completo para a lanchonete Nova Era. Painel escuro, premi
 
 - Language: Portuguese (pt-BR) in UI labels and toast messages
 - Currency: R$ (Brazilian Real) with pt-BR formatting
-- Design: dark, premium, navy blue + yellow + red brand palette (Nova Era Lanchonete)
+- Design: dark, premium — Black + Royal Blue palette (primary: hsl(221 83% 53%), bg: hsl(222 35% 4%), sidebar: hsl(222 40% 3%))
+- NO yellow, orange, or red in UI (red only for destructive/error actions)
 
 ## Gotchas
 
@@ -64,8 +65,8 @@ Sistema administrativo completo para a lanchonete Nova Era. Painel escuro, premi
 ## Default credentials (development seed data)
 
 - Admin: `admin@novaera.com` / `admin123`
-- Gerente: `gerente@novaera.com` / `gerente123`
-- Funcionário: `ana@novaera.com` / `func123`
+- Gerente: `gerente@admin.com` / `Gerente123`
+- Funcionário: `funcionario@admin.com` / `Funcionario123`
 
 ## Pointers
 

@@ -55,12 +55,12 @@ import {
 import type { Product } from "@workspace/api-client-react";
 
 const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional().nullable(),
-  price: z.coerce.number().min(0.01, "Price must be greater than 0"),
+  price: z.coerce.number().min(0.01, "Preço deve ser maior que zero"),
   categoryId: z.coerce.number().optional().nullable(),
-  stock: z.coerce.number().min(0, "Stock cannot be negative"),
-  imageUrl: z.string().url("Must be a valid URL").optional().nullable().or(z.literal("")),
+  stock: z.coerce.number().min(0, "Estoque não pode ser negativo"),
+  imageUrl: z.string().url("URL inválida").optional().nullable().or(z.literal("")),
   active: z.boolean().default(true),
   featured: z.boolean().default(false),
 });
@@ -71,7 +71,6 @@ export default function ProductsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -87,30 +86,12 @@ export default function ProductsPage() {
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      categoryId: undefined,
-      stock: 0,
-      imageUrl: "",
-      active: true,
-      featured: false,
-    },
+    defaultValues: { name: "", description: "", price: 0, categoryId: undefined, stock: 0, imageUrl: "", active: true, featured: false },
   });
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    form.reset({
-      name: "",
-      description: "",
-      price: 0,
-      categoryId: categories?.[0]?.id || undefined,
-      stock: 0,
-      imageUrl: "",
-      active: true,
-      featured: false,
-    });
+    form.reset({ name: "", description: "", price: 0, categoryId: categories?.[0]?.id || undefined, stock: 0, imageUrl: "", active: true, featured: false });
     setIsModalOpen(true);
   };
 
@@ -135,11 +116,11 @@ export default function ProductsPage() {
         { id: editingProduct.id, data: values },
         {
           onSuccess: () => {
-            toast.success("Product updated successfully");
+            toast.success("Produto atualizado com sucesso");
             queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
             setIsModalOpen(false);
           },
-          onError: () => toast.error("Failed to update product"),
+          onError: () => toast.error("Falha ao atualizar o produto"),
         }
       );
     } else {
@@ -147,26 +128,26 @@ export default function ProductsPage() {
         { data: values as any },
         {
           onSuccess: () => {
-            toast.success("Product created successfully");
+            toast.success("Produto criado com sucesso");
             queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
             setIsModalOpen(false);
           },
-          onError: () => toast.error("Failed to create product"),
+          onError: () => toast.error("Falha ao criar o produto"),
         }
       );
     }
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this product?")) {
+    if (confirm("Deseja excluir este produto? Esta ação não poderá ser desfeita.")) {
       deleteMutation.mutate(
         { id },
         {
           onSuccess: () => {
-            toast.success("Product deleted");
+            toast.success("Produto excluído");
             queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
           },
-          onError: () => toast.error("Failed to delete product"),
+          onError: () => toast.error("Falha ao excluir o produto"),
         }
       );
     }
@@ -177,7 +158,7 @@ export default function ProductsPage() {
       { id, data: { active: !currentStatus } },
       {
         onSuccess: () => {
-          toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'}`);
+          toast.success(`Produto ${!currentStatus ? "ativado" : "desativado"}`);
           queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
         },
       }
@@ -185,41 +166,39 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-screen-2xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Products</h2>
-          <p className="text-muted-foreground">Manage your menu items.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Produtos</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gerencie os itens do cardápio</p>
         </div>
-        <Button onClick={openCreateModal} className="gap-2 shadow-lg hover:shadow-primary/25">
-          <Plus className="h-4 w-4" /> New Product
+        <Button onClick={openCreateModal} className="gap-2 h-9 text-sm shadow-md shadow-primary/20">
+          <Plus className="h-4 w-4" /> Novo Produto
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search products..."
-            className="pl-9 bg-card/50"
+            placeholder="Buscar produtos..."
+            className="pl-9 h-9 bg-card/50 text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="w-full sm:w-[200px]">
           <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger className="bg-card/50">
+            <SelectTrigger className="bg-card/50 h-9 text-sm">
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="All Categories" />
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue placeholder="Todas as categorias" />
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all">Todas as categorias</SelectItem>
               {categories?.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id.toString()}>
-                  {cat.name}
-                </SelectItem>
+                <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -229,97 +208,98 @@ export default function ProductsPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Card key={i} className="bg-card/50 backdrop-blur-sm border-card-border overflow-hidden">
-              <Skeleton className="h-48 w-full rounded-none" />
+            <Card key={i} className="bg-card border-card-border overflow-hidden">
+              <Skeleton className="h-44 w-full rounded-none" />
               <CardContent className="p-4 space-y-3">
-                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <div className="flex justify-between items-center pt-2">
-                  <Skeleton className="h-6 w-1/3" />
-                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-5 w-16" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : products?.length === 0 ? (
-        <div className="text-center py-24 bg-card/30 rounded-xl border border-dashed border-border">
-          <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-          <h3 className="text-lg font-medium text-foreground">No products found</h3>
-          <p className="text-muted-foreground mt-1">Try adjusting your filters or create a new product.</p>
+      ) : !products?.length ? (
+        <div className="text-center py-24 bg-card/30 rounded-2xl border border-dashed border-border">
+          <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-30" />
+          <h3 className="text-sm font-semibold text-foreground">Nenhum produto cadastrado</h3>
+          <p className="text-xs text-muted-foreground mt-1 mb-4">
+            {search || categoryId !== "all" ? "Tente ajustar os filtros" : "Cadastre o primeiro produto do cardápio"}
+          </p>
+          {!search && categoryId === "all" && (
+            <Button onClick={openCreateModal} size="sm" className="gap-2 text-xs">
+              <Plus className="h-3.5 w-3.5" /> Cadastrar Produto
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <AnimatePresence>
-            {products?.map((product, index) => (
+            {products.map((product, index) => (
               <motion.div
                 key={product.id}
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.18, delay: index * 0.04 }}
               >
-                <Card className="bg-card/50 backdrop-blur-sm border-card-border overflow-hidden group hover:border-primary/50 transition-colors h-full flex flex-col">
-                  <div className="relative h-48 bg-muted/30 flex items-center justify-center overflow-hidden">
+                <Card className="bg-card border-card-border overflow-hidden group hover:border-primary/40 transition-all duration-200 h-full flex flex-col shadow-sm">
+                  <div className="relative h-44 bg-muted/20 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      />
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
-                      <Package className="h-16 w-16 text-muted-foreground/30" />
+                      <Package className="h-12 w-12 text-muted-foreground/20" />
                     )}
-                    
-                    <div className="absolute top-2 right-2 flex gap-2">
+                    <div className="absolute top-2 right-2 flex gap-1.5">
                       {product.featured && (
-                        <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950 font-bold border-none shadow-md">
-                          Featured
+                        <Badge variant="default" className="bg-primary text-white text-[10px] font-semibold border-none shadow-md">
+                          Destaque
                         </Badge>
                       )}
                       {!product.active && (
-                        <Badge variant="destructive" className="shadow-md">
-                          Inactive
+                        <Badge variant="outline" className="bg-background/80 text-muted-foreground text-[10px] border-border">
+                          Inativo
                         </Badge>
                       )}
                     </div>
                   </div>
-                  
+
                   <CardContent className="p-4 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg line-clamp-1" title={product.name}>{product.name}</h3>
+                      <h3 className="font-semibold text-sm text-foreground line-clamp-1" title={product.name}>{product.name}</h3>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 -mr-1.5 text-muted-foreground">
+                            <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="text-sm">
                           <DropdownMenuItem onClick={() => openEditModal(product)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
+                            <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleStatus(product.id, product.active)}>
-                            {product.active ? (
-                              <><XCircle className="mr-2 h-4 w-4 text-muted-foreground" /> Deactivate</>
-                            ) : (
-                              <><CheckCircle2 className="mr-2 h-4 w-4 text-green-500" /> Activate</>
-                            )}
+                            {product.active
+                              ? <><XCircle className="mr-2 h-3.5 w-3.5 text-muted-foreground" /> Desativar</>
+                              : <><CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-500" /> Ativar</>
+                            }
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDelete(product.id)} className="text-destructive focus:text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
-                      {product.description || "No description provided."}
+
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4 flex-1">
+                      {product.description || "Sem descrição cadastrada."}
                     </p>
-                    
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
-                      <span className="text-lg font-bold text-primary">{formatCurrency(product.price)}</span>
-                      <Badge variant="outline" className={product.stock <= 5 ? "text-red-500 border-red-500/30" : "text-muted-foreground"}>
-                        {product.stock} in stock
+
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                      <span className="text-base font-bold text-primary">{formatCurrency(product.price)}</span>
+                      <Badge variant="outline" className={`text-xs ${product.stock <= 5 ? "text-red-400 border-red-500/30" : "text-muted-foreground"}`}>
+                        {product.stock} em estoque
                       </Badge>
                     </div>
                   </CardContent>
@@ -330,163 +310,115 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-card border-border">
+        <DialogContent className="sm:max-w-[580px] bg-card border-border rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{editingProduct ? "Edit Product" : "New Product"}</DialogTitle>
+            <DialogTitle className="text-base font-bold">{editingProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="X-Tudo Nova Era" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price (R$)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select 
-                        onValueChange={(val) => field.onChange(val ? Number(val) : undefined)} 
-                        defaultValue={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories?.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id.toString()}>
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="text-xs font-semibold">Nome do Produto</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: X-Burguer Especial" className="h-9 text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
-                <FormField
-                  control={form.control}
-                  name="stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL (optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Description (optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Delicious burger with..." {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="price" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Preço (R$)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" className="h-9 text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
-                <FormField
-                  control={form.control}
-                  name="active"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Active Status</FormLabel>
-                        <div className="text-[0.8rem] text-muted-foreground">
-                          Product will be visible to customers
-                        </div>
-                      </div>
+                <FormField control={form.control} name="categoryId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Categoria</FormLabel>
+                    <Select onValueChange={(val) => field.onChange(val ? Number(val) : undefined)} defaultValue={field.value?.toString()}>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
                       </FormControl>
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        {categories?.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
-                <FormField
-                  control={form.control}
-                  name="featured"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Featured</FormLabel>
-                        <div className="text-[0.8rem] text-muted-foreground">
-                          Highlight on the main page
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="stock" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Estoque</FormLabel>
+                    <FormControl>
+                      <Input type="number" className="h-9 text-sm" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">URL da Imagem (opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://..." className="h-9 text-sm" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="text-xs font-semibold">Descrição (opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Descreva o produto..." className="h-9 text-sm" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="active" render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-xs font-semibold">Produto Ativo</FormLabel>
+                      <div className="text-[11px] text-muted-foreground">Visível no cardápio</div>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="featured" render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-xs font-semibold">Em Destaque</FormLabel>
+                      <div className="text-[11px] text-muted-foreground">Aparece na vitrine</div>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )} />
               </div>
-              
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                  Cancel
+
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
+                  Cancelar
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingProduct ? "Save Changes" : "Create Product"}
+                <Button type="submit" size="sm" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {editingProduct ? "Salvar Alterações" : "Criar Produto"}
                 </Button>
               </DialogFooter>
             </form>

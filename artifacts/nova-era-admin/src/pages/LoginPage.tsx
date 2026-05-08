@@ -4,10 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import logoPath from "@assets/Screenshot_20260507_062530_Instagram_1778164969419.png";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +38,7 @@ export default function LoginPage() {
     loginMutation.mutate({ data }, {
       onSuccess: (res) => {
         login(res.accessToken, res.refreshToken);
-        toast.success("Login realizado com sucesso!");
+        toast.success("Acesso realizado com sucesso!");
         setLocation("/dashboard");
       },
       onError: (error) => {
@@ -51,45 +50,43 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-destructive/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(221_83%_53%_/_0.08)_0%,_transparent_60%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_hsl(221_83%_40%_/_0.05)_0%,_transparent_50%)] pointer-events-none" />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-[400px]"
       >
-        <div className="bg-card/80 backdrop-blur-xl border border-card-border p-8 rounded-2xl shadow-2xl flex flex-col items-center">
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            className="mb-8 text-center flex flex-col items-center"
-          >
-            <img
-              src={logoPath}
-              alt="Nova Era Logo"
-              className="h-24 w-24 rounded-2xl object-cover mb-4 shadow-xl border border-border/50"
-            />
-            <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Bem-vindo de volta</h1>
-            <p className="text-sm text-muted-foreground">Acesse o painel Nova Era Admin</p>
-          </motion.div>
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 mb-5">
+            <div className="w-5 h-5 rounded-sm bg-primary" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Nova Era</h1>
+          <p className="text-sm text-muted-foreground mt-1">Painel Administrativo</p>
+        </div>
+
+        <div className="bg-card border border-card-border rounded-2xl p-8 shadow-xl">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-foreground">Entrar na sua conta</h2>
+            <p className="text-sm text-muted-foreground mt-1">Informe suas credenciais para acessar</p>
+          </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mail</FormLabel>
+                    <FormLabel className="text-sm font-medium">E-mail</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="admin@novaera.com"
+                        placeholder="seu@email.com"
                         type="email"
                         autoComplete="email"
-                        className="bg-background/50 border-input h-11"
+                        className="h-11 bg-background/60 border-border focus:border-primary transition-colors"
                         {...field}
                       />
                     </FormControl>
@@ -103,13 +100,13 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel className="text-sm font-medium">Senha</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
                         type="password"
                         autoComplete="current-password"
-                        className="bg-background/50 border-input h-11"
+                        className="h-11 bg-background/60 border-border focus:border-primary transition-colors"
                         {...field}
                       />
                     </FormControl>
@@ -120,11 +117,11 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 text-base font-medium mt-4 shadow-lg hover:shadow-primary/25 transition-all"
+                className="w-full h-11 text-sm font-semibold mt-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   "Entrar"
                 )}
@@ -132,9 +129,9 @@ export default function LoginPage() {
             </form>
           </Form>
 
-          <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="h-4 w-4 text-primary/70" />
-            Conexão segura com autenticação JWT
+          <div className="mt-6 pt-5 border-t border-border flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Lock className="h-3 w-3" />
+            Conexão protegida com JWT
           </div>
         </div>
       </motion.div>

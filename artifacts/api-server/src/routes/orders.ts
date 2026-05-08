@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, productsTable } from "@workspace/db";
 import { auditLog } from "../lib/audit";
 import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
@@ -51,36 +51,43 @@ router.get("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  let query = db.select().from(ordersTable).orderBy(ordersTable.createdAt).$dynamic();
+  let query = db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt)).$dynamic();
   if (queryParams.data.status) query = query.where(eq(ordersTable.status, queryParams.data.status));
   if (queryParams.data.limit) query = query.limit(queryParams.data.limit);
 
   const orders = await query;
 
-  const ordersWithItems = await Promise.all(
-    orders.map(async (order) => {
-      const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
-      return {
-        id: order.id,
-        customerName: order.customerName,
-        customerPhone: order.customerPhone ?? null,
-        status: order.status,
-        total: Number(order.total),
-        notes: order.notes ?? null,
-        items: items.map((item) => ({
-          id: item.id,
-          orderId: item.orderId,
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: Number(item.unitPrice),
-          totalPrice: Number(item.totalPrice),
-        })),
-        createdAt: order.createdAt.toISOString(),
-        updatedAt: order.updatedAt.toISOString(),
-      };
-    })
-  );
+  const orderIds = orders.map((o) => o.id);
+  const allItems = orderIds.length > 0
+    ? await db.select().from(orderItemsTable).where(inArray(orderItemsTable.orderId, orderIds))
+    : [];
+
+  const itemsByOrder = new Map<number, typeof allItems>();
+  for (const item of allItems) {
+    const list = itemsByOrder.get(item.orderId) ?? [];
+    list.push(item);
+    itemsByOrder.set(item.orderId, list);
+  }
+
+  const ordersWithItems = orders.map((order) => ({
+    id: order.id,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone ?? null,
+    status: order.status,
+    total: Number(order.total),
+    notes: order.notes ?? null,
+    items: (itemsByOrder.get(order.id) ?? []).map((item) => ({
+      id: item.id,
+      orderId: item.orderId,
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice),
+      totalPrice: Number(item.totalPrice),
+    })),
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+  }));
 
   res.json(ListOrdersResponse.parse(ordersWithItems));
 });
@@ -100,9 +107,14 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res): Promise<void>
     .values({ customerName, customerPhone: customerPhone ?? null, notes: notes ?? null, total: String(total), status: "pending" })
     .returning();
 
+  const productIds = items.map((i) => i.productId);
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
   for (const item of items) {
-    const [product] = await db.select().from(productsTable).where(eq(productsTable.id, item.productId));
-    const productName = product?.name ?? "Produto";
+    const productName = productMap.get(item.productId)?.name ?? "Produto";
     await db.insert(orderItemsTable).values({
       orderId: order.id,
       productId: item.productId,

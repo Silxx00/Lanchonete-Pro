@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { pool } from "@workspace/db";
 
 const rawPort = process.env["PORT"];
 
@@ -30,3 +31,24 @@ server.on("error", (err) => {
   logger.error({ err }, "Fatal server error");
   process.exit(1);
 });
+
+function gracefulShutdown(signal: string) {
+  logger.info({ signal }, "Shutdown signal received, closing server");
+  server.close(async () => {
+    try {
+      await pool.end();
+      logger.info("Database pool closed");
+    } catch (err) {
+      logger.error({ err }, "Error closing database pool");
+    }
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    logger.error("Graceful shutdown timed out, forcing exit");
+    process.exit(1);
+  }, 10_000).unref();
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));

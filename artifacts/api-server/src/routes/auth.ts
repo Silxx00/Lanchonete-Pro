@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte } from "drizzle-orm";
 import { db, usersTable, refreshTokensTable, loginAttemptsTable } from "@workspace/db";
 import { hashPassword, verifyPassword } from "../lib/password";
 import { signAccessToken, generateRefreshToken, hashRefreshToken, verifyAccessToken } from "../lib/jwt";
@@ -14,20 +14,19 @@ const router: IRouter = Router();
 const LOCKOUT_MAX_ATTEMPTS = 5;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
 
-async function countRecentFailures(email: string, ipAddress: string | null): Promise<number> {
+async function countRecentFailures(email: string, _ipAddress: string | null): Promise<number> {
   const since = new Date(Date.now() - LOCKOUT_WINDOW_MS);
   const rows = await db
-    .select()
+    .select({ id: loginAttemptsTable.id })
     .from(loginAttemptsTable)
     .where(
       and(
         eq(loginAttemptsTable.email, email),
         eq(loginAttemptsTable.success, false),
+        gte(loginAttemptsTable.createdAt, since),
       )
     );
-  return rows.filter(
-    (r) => r.createdAt >= since && (r.ipAddress === ipAddress || r.email === email)
-  ).length;
+  return rows.length;
 }
 
 async function recordAttempt(email: string, ipAddress: string | null, success: boolean) {

@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((accessToken: string, refreshToken: string) => {
     setToken(accessToken);
     setRefreshToken(refreshToken);
-    setUser(parseTokenUser(accessToken));
+    const parsed = parseTokenUser(accessToken);
+    if (parsed) setUser(parsed);
   }, []);
 
   useEffect(() => {

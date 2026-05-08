@@ -66,25 +66,31 @@ router.post("/products", requireAuth, requireAdminOrManager, async (req: AuthReq
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [product] = await db
-    .insert(productsTable)
-    .values({
-      name: parsed.data.name,
-      description: parsed.data.description ?? null,
-      price: String(parsed.data.price),
-      imageUrl: parsed.data.imageUrl ?? null,
-      categoryId: parsed.data.categoryId ?? null,
-      stock: parsed.data.stock ?? 0,
-      active: parsed.data.active ?? true,
-      featured: parsed.data.featured ?? false,
-    })
-    .returning();
 
-  let categoryName: string | null = null;
-  if (product.categoryId) {
-    const [cat] = await db.select().from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    categoryName = cat?.name ?? null;
-  }
+  const [productResult, catRow] = await Promise.all([
+    db.insert(productsTable)
+      .values({
+        name: parsed.data.name,
+        description: parsed.data.description ?? null,
+        price: String(parsed.data.price),
+        imageUrl: parsed.data.imageUrl ?? null,
+        categoryId: parsed.data.categoryId ?? null,
+        stock: parsed.data.stock ?? 0,
+        active: parsed.data.active ?? true,
+        featured: parsed.data.featured ?? false,
+      })
+      .returning(),
+    parsed.data.categoryId != null
+      ? db.select({ name: categoriesTable.name })
+          .from(categoriesTable)
+          .where(eq(categoriesTable.id, parsed.data.categoryId))
+          .then((r) => r[0] ?? null)
+      : Promise.resolve(null),
+  ]);
+
+  const [product] = productResult;
+  const categoryName = catRow?.name ?? null;
+
   await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "product", entityId: product.id, details: { name: product.name }, req });
   res.status(201).json(GetProductResponse.parse(toProductDto(product, categoryName)));
 });
@@ -140,13 +146,14 @@ router.patch("/products/:id", requireAuth, requireAdminOrManager, async (req: Au
     return;
   }
 
-  let categoryName: string | null = null;
-  if (product.categoryId) {
-    const [cat] = await db.select().from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    categoryName = cat?.name ?? null;
-  }
+  const [row] = await db
+    .select({ product: productsTable, categoryName: categoriesTable.name })
+    .from(productsTable)
+    .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+    .where(eq(productsTable.id, product.id));
+
   await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "update", entity: "product", entityId: product.id, details: updateData, req });
-  res.json(UpdateProductResponse.parse(toProductDto(product, categoryName)));
+  res.json(UpdateProductResponse.parse(toProductDto(row?.product ?? product, row?.categoryName ?? null)));
 });
 
 router.delete("/products/:id", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {

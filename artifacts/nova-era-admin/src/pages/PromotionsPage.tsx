@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatCurrency } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 import {
   useListPromotions,
@@ -75,6 +76,7 @@ export default function PromotionsPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<Promotion | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: promotions, isLoading } = useListPromotions();
 
@@ -136,19 +138,19 @@ export default function PromotionsPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Deseja excluir esta promoção? Esta ação não pode ser desfeita.")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            toast.success("Promoção excluída");
-            queryClient.invalidateQueries({ queryKey: getListPromotionsQueryKey() });
-          },
-          onError: () => toast.error("Falha ao excluir a promoção"),
-        }
-      );
-    }
+  const handleDeleteConfirm = () => {
+    if (deleteId == null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          toast.success("Promoção excluída");
+          queryClient.invalidateQueries({ queryKey: getListPromotionsQueryKey() });
+          setDeleteId(null);
+        },
+        onError: () => toast.error("Falha ao excluir a promoção"),
+      }
+    );
   };
 
   return (
@@ -234,7 +236,7 @@ export default function PromotionsPage() {
                           <DropdownMenuItem onClick={() => openEditModal(promo)}>
                             <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(promo.id)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onClick={() => setDeleteId(promo.id)} className="text-destructive focus:text-destructive">
                             <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -247,6 +249,15 @@ export default function PromotionsPage() {
           </table>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteId != null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Excluir promoção"
+        description="Deseja excluir esta promoção? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteConfirm}
+      />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[480px] bg-card border-border rounded-2xl">

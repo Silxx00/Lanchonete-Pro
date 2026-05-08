@@ -102,27 +102,30 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res): Promise<void>
   const { customerName, customerPhone, notes, items } = parsed.data;
   const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
-  const [order] = await db
-    .insert(ordersTable)
-    .values({ customerName, customerPhone: customerPhone ?? null, notes: notes ?? null, total: String(total), status: "pending" })
-    .returning();
-
   const productIds = items.map((i) => i.productId);
-  const products = productIds.length > 0
-    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
-    : [];
+  const [orderResult, products] = await Promise.all([
+    db.insert(ordersTable)
+      .values({ customerName, customerPhone: customerPhone ?? null, notes: notes ?? null, total: String(total), status: "pending" })
+      .returning(),
+    productIds.length > 0
+      ? db.select({ id: productsTable.id, name: productsTable.name }).from(productsTable).where(inArray(productsTable.id, productIds))
+      : Promise.resolve([]),
+  ]);
+
+  const [order] = orderResult;
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  for (const item of items) {
-    const productName = productMap.get(item.productId)?.name ?? "Produto";
-    await db.insert(orderItemsTable).values({
-      orderId: order.id,
-      productId: item.productId,
-      productName,
-      quantity: item.quantity,
-      unitPrice: String(item.unitPrice),
-      totalPrice: String(item.quantity * item.unitPrice),
-    });
+  if (items.length > 0) {
+    await db.insert(orderItemsTable).values(
+      items.map((item) => ({
+        orderId: order.id,
+        productId: item.productId,
+        productName: productMap.get(item.productId)?.name ?? "Produto",
+        quantity: item.quantity,
+        unitPrice: String(item.unitPrice),
+        totalPrice: String(item.quantity * item.unitPrice),
+      }))
+    );
   }
 
   await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "order", entityId: order.id, details: { customerName, total }, req });

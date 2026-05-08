@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 import {
   useListUsers,
@@ -78,6 +79,7 @@ export default function UsersPage() {
   const { data: currentUser } = useGetMe();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: users, isLoading } = useListUsers();
 
@@ -152,23 +154,27 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDeleteRequest = (id: number) => {
     if (id === currentUser?.id) {
       toast.error("Você não pode excluir sua própria conta");
       return;
     }
-    if (confirm("Deseja excluir este usuário? Esta ação não pode ser desfeita.")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            toast.success("Usuário excluído");
-            queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          },
-          onError: () => toast.error("Falha ao excluir o usuário"),
-        }
-      );
-    }
+    setDeleteId(id);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteId == null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          toast.success("Usuário excluído");
+          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+          setDeleteId(null);
+        },
+        onError: () => toast.error("Falha ao excluir o usuário"),
+      }
+    );
   };
 
   return (
@@ -253,7 +259,7 @@ export default function UsersPage() {
                             <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                           </DropdownMenuItem>
                           {user.id !== currentUser?.id && (
-                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-destructive focus:text-destructive">
+                            <DropdownMenuItem onClick={() => handleDeleteRequest(user.id)} className="text-destructive focus:text-destructive">
                               <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
                             </DropdownMenuItem>
                           )}
@@ -267,6 +273,15 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteId != null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Excluir usuário"
+        description="Deseja excluir este usuário? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteConfirm}
+      />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[420px] bg-card border-border rounded-2xl">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Search, ChevronRight, Check, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,17 +35,17 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "pending":   return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-    case "accepted":  return "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
-    case "preparing": return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
-    case "ready":     return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-    case "delivered": return "bg-slate-500/10 text-slate-400 border-slate-500/20";
-    case "cancelled": return "bg-red-500/10 text-red-400 border-red-500/20";
-    default:          return "bg-primary/10 text-primary border-primary/20";
-  }
+const STATUS_COLORS: Record<string, string> = {
+  pending:   "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  accepted:  "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+  preparing: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  ready:     "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  delivered: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  cancelled: "bg-red-500/10 text-red-400 border-red-500/20",
 };
+
+const getStatusColor = (status: string) =>
+  STATUS_COLORS[status.toLowerCase()] ?? "bg-primary/10 text-primary border-primary/20";
 
 export default function OrdersPage() {
   const queryClient = useQueryClient();
@@ -74,9 +74,14 @@ export default function OrdersPage() {
     );
   };
 
-  const filtered = orders?.filter((o) =>
-    !search || o.customerName.toLowerCase().includes(search.toLowerCase()) || String(o.id).includes(search)
-  );
+  const filtered = useMemo(() => {
+    if (!orders) return [];
+    if (!search) return orders;
+    const q = search.toLowerCase();
+    return orders.filter(
+      (o) => o.customerName.toLowerCase().includes(q) || String(o.id).includes(q)
+    );
+  }, [orders, search]);
 
   return (
     <div className="space-y-6 flex flex-col h-full max-w-screen-2xl">
@@ -119,7 +124,7 @@ export default function OrdersPage() {
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-3" />
             <p className="text-sm">Carregando pedidos...</p>
           </div>
-        ) : !filtered?.length ? (
+        ) : !filtered.length ? (
           <div className="p-16 flex flex-col items-center justify-center text-muted-foreground gap-3">
             <ShoppingCart className="h-10 w-10 opacity-20" />
             <p className="text-sm font-medium">Nenhum pedido encontrado</p>

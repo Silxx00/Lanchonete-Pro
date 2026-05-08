@@ -33,6 +33,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 import {
   useListCategories,
@@ -57,6 +58,7 @@ export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: categories, isLoading } = useListCategories();
 
@@ -114,19 +116,19 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Deseja excluir esta categoria? Os produtos vinculados podem ser afetados.")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            toast.success("Categoria excluída");
-            queryClient.invalidateQueries({ queryKey: getListCategoriesQueryKey() });
-          },
-          onError: () => toast.error("Falha ao excluir a categoria"),
-        }
-      );
-    }
+  const handleDeleteConfirm = () => {
+    if (deleteId == null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          toast.success("Categoria excluída");
+          queryClient.invalidateQueries({ queryKey: getListCategoriesQueryKey() });
+          setDeleteId(null);
+        },
+        onError: () => toast.error("Falha ao excluir a categoria"),
+      }
+    );
   };
 
   return (
@@ -176,7 +178,13 @@ export default function CategoriesPage() {
                 <Card className={`bg-card border-card-border overflow-hidden group hover:border-primary/40 transition-all duration-200 h-full flex flex-col shadow-sm ${!category.active ? "opacity-55" : ""}`}>
                   <div className="relative h-28 bg-muted/20 flex items-center justify-center overflow-hidden">
                     {category.imageUrl ? (
-                      <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img
+                        src={category.imageUrl}
+                        alt={category.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                     ) : (
                       <div className="text-3xl font-black text-muted-foreground/15 uppercase tracking-tighter">
                         {category.name.substring(0, 3)}
@@ -193,7 +201,7 @@ export default function CategoriesPage() {
                           <DropdownMenuItem onClick={() => openEditModal(category)}>
                             <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(category.id)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onClick={() => setDeleteId(category.id)} className="text-destructive focus:text-destructive">
                             <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -216,6 +224,15 @@ export default function CategoriesPage() {
           </AnimatePresence>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteId != null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Excluir categoria"
+        description="Deseja excluir esta categoria? Os produtos vinculados podem ser afetados."
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteConfirm}
+      />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[420px] bg-card border-border rounded-2xl">

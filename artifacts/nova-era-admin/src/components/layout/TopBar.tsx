@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { Menu, LogOut, User as UserIcon, ChevronDown } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -29,15 +30,24 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   "/users":      { title: "Usuários",    subtitle: "Controle de acesso ao sistema" },
 };
 
-export function TopBar({ setMobileOpen }: { setMobileOpen: (o: boolean) => void }) {
+export const TopBar = memo(function TopBar({ setMobileOpen }: { setMobileOpen: (o: boolean) => void }) {
   const [location, setLocation] = useLocation();
   const { user: tokenUser, logout } = useAuth();
-  const { data: user } = useGetMe({ query: { enabled: !!tokenUser, queryKey: ["getMe"] } });
+  const { data: user } = useGetMe({
+    query: {
+      enabled: !!tokenUser,
+      queryKey: ["getMe"],
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+    },
+  });
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     logout();
     setLocation("/login");
-  };
+  }, [logout, setLocation]);
+
+  const handleMenuOpen = useCallback(() => setMobileOpen(true), [setMobileOpen]);
 
   const displayName = user?.name || tokenUser?.email || "Admin";
   const displayEmail = user?.email || tokenUser?.email || "";
@@ -58,7 +68,7 @@ export function TopBar({ setMobileOpen }: { setMobileOpen: (o: boolean) => void 
           variant="ghost"
           size="icon"
           className="md:hidden h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-          onClick={() => setMobileOpen(true)}
+          onClick={handleMenuOpen}
         >
           <Menu className="h-4 w-4" />
         </Button>
@@ -124,4 +134,4 @@ export function TopBar({ setMobileOpen }: { setMobileOpen: (o: boolean) => void 
       </div>
     </header>
   );
-}
+});

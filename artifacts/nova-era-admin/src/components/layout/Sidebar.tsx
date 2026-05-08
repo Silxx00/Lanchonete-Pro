@@ -1,5 +1,5 @@
+import { memo } from "react";
 import { Link, useLocation } from "wouter";
-import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Package,
@@ -47,7 +47,7 @@ const ROLE_COLORS: Record<string, string> = {
   employee: "text-cyan-400",
 };
 
-export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (o: boolean) => void }) {
+export const Sidebar = memo(function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (o: boolean) => void }) {
   const [location] = useLocation();
   const { role } = usePermission();
   const { user } = useAuth();
@@ -75,7 +75,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
         />
       )}
 
-      <motion.aside
+      <aside
         className={cn(
           "fixed top-0 left-0 z-50 h-screen w-[260px] bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
@@ -109,15 +109,12 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
             const isActive = location === item.href || location.startsWith(`${item.href}/`);
             return (
               <Link key={item.name} href={item.href} onClick={() => setMobileOpen(false)}>
-                <motion.div
-                  whileHover={{ x: 2 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.12 }}
+                <div
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer select-none",
                     isActive
                       ? "bg-primary text-white shadow-md shadow-primary/25"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:translate-x-0.5"
                   )}
                 >
                   <item.icon
@@ -130,7 +127,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
                   {isActive && (
                     <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60" />
                   )}
-                </motion.div>
+                </div>
               </Link>
             );
           })}
@@ -149,10 +146,10 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
                 <span className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{displayEmail}</span>
               )}
             </div>
-            <RoleIcon className={cn("h-3.5 w-3.5 shrink-0", ROLE_COLORS[role])} />
+            <RoleIcon className={cn("h-3.5 w-3.5 shrink-0", ROLE_COLORS[role])} title={ROLE_LABELS[role]} />
           </div>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
-}
+});

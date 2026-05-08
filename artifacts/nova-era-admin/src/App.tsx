@@ -28,6 +28,10 @@ const queryClient = new QueryClient({
       },
       refetchOnWindowFocus: false,
       staleTime: 30_000,
+      gcTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      retry: false,
     },
   },
 });

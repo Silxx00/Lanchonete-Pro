@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte } from "drizzle-orm";
+import { eq, and, gte, lt } from "drizzle-orm";
 import { db, usersTable, refreshTokensTable, loginAttemptsTable } from "@workspace/db";
 import { hashPassword, verifyPassword } from "../lib/password";
 import { signAccessToken, generateRefreshToken, hashRefreshToken, verifyAccessToken } from "../lib/jwt";
@@ -35,6 +35,12 @@ async function recordAttempt(email: string, ipAddress: string | null, success: b
   } catch (err) {
     logger.error({ err }, "Failed to record login attempt");
   }
+}
+
+function cleanupExpiredTokens() {
+  db.delete(refreshTokensTable)
+    .where(lt(refreshTokensTable.expiresAt, new Date()))
+    .catch((err: unknown) => logger.warn({ err }, "Failed to cleanup expired refresh tokens"));
 }
 
 function toUserDto(user: typeof usersTable.$inferSelect) {
@@ -104,6 +110,8 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     tokenHash: refreshTokenHash,
     expiresAt,
   });
+
+  cleanupExpiredTokens();
 
   await auditLog({ userId: user.id, userEmail: user.email, action: "login_success", entity: "auth", req });
 

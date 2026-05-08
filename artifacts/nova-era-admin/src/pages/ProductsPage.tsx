@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, CheckCircle2, XCircle, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatCurrency } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useDebounce } from "@/hooks/useDebounce";
 
 import {
   useListProducts,
@@ -69,10 +71,12 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounce(searchInput, 350);
   const [categoryId, setCategoryId] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: categories } = useListCategories();
   const { data: products, isLoading } = useListProducts(
@@ -89,13 +93,13 @@ export default function ProductsPage() {
     defaultValues: { name: "", description: "", price: 0, categoryId: undefined, stock: 0, imageUrl: "", active: true, featured: false },
   });
 
-  const openCreateModal = () => {
+  const openCreateModal = useCallback(() => {
     setEditingProduct(null);
     form.reset({ name: "", description: "", price: 0, categoryId: categories?.[0]?.id || undefined, stock: 0, imageUrl: "", active: true, featured: false });
     setIsModalOpen(true);
-  };
+  }, [form, categories]);
 
-  const openEditModal = (product: Product) => {
+  const openEditModal = useCallback((product: Product) => {
     setEditingProduct(product);
     form.reset({
       name: product.name,
@@ -108,7 +112,7 @@ export default function ProductsPage() {
       featured: product.featured,
     });
     setIsModalOpen(true);
-  };
+  }, [form]);
 
   const onSubmit = (values: ProductFormValues) => {
     if (editingProduct) {
@@ -138,22 +142,22 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Deseja excluir este produto? Esta ação não poderá ser desfeita.")) {
-      deleteMutation.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            toast.success("Produto excluído");
-            queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-          },
-          onError: () => toast.error("Falha ao excluir o produto"),
-        }
-      );
-    }
-  };
+  const handleDeleteConfirm = useCallback(() => {
+    if (deleteId == null) return;
+    deleteMutation.mutate(
+      { id: deleteId },
+      {
+        onSuccess: () => {
+          toast.success("Produto excluído");
+          queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
+          setDeleteId(null);
+        },
+        onError: () => toast.error("Falha ao excluir o produto"),
+      }
+    );
+  }, [deleteId, deleteMutation, queryClient]);
 
-  const toggleStatus = (id: number, currentStatus: boolean) => {
+  const toggleStatus = useCallback((id: number, currentStatus: boolean) => {
     updateMutation.mutate(
       { id, data: { active: !currentStatus } },
       {
@@ -163,7 +167,7 @@ export default function ProductsPage() {
         },
       }
     );
-  };
+  }, [updateMutation, queryClient]);
 
   return (
     <div className="space-y-6 max-w-screen-2xl">
@@ -183,8 +187,8 @@ export default function ProductsPage() {
           <Input
             placeholder="Buscar produtos..."
             className="pl-9 h-9 bg-card/50 text-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
         <div className="w-full sm:w-[200px]">
@@ -226,9 +230,9 @@ export default function ProductsPage() {
           <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-30" />
           <h3 className="text-sm font-semibold text-foreground">Nenhum produto cadastrado</h3>
           <p className="text-xs text-muted-foreground mt-1 mb-4">
-            {search || categoryId !== "all" ? "Tente ajustar os filtros" : "Cadastre o primeiro produto do cardápio"}
+            {searchInput || categoryId !== "all" ? "Tente ajustar os filtros" : "Cadastre o primeiro produto do cardápio"}
           </p>
-          {!search && categoryId === "all" && (
+          {!searchInput && categoryId === "all" && (
             <Button onClick={openCreateModal} size="sm" className="gap-2 text-xs">
               <Plus className="h-3.5 w-3.5" /> Cadastrar Produto
             </Button>
@@ -248,7 +252,13 @@ export default function ProductsPage() {
                 <Card className="bg-card border-card-border overflow-hidden group hover:border-primary/40 transition-all duration-200 h-full flex flex-col shadow-sm">
                   <div className="relative h-44 bg-muted/20 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                     ) : (
                       <Package className="h-12 w-12 text-muted-foreground/20" />
                     )}
@@ -285,7 +295,7 @@ export default function ProductsPage() {
                               : <><CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-500" /> Ativar</>
                             }
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(product.id)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onClick={() => setDeleteId(product.id)} className="text-destructive focus:text-destructive">
                             <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -309,6 +319,15 @@ export default function ProductsPage() {
           </AnimatePresence>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteId != null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Excluir produto"
+        description="Deseja excluir este produto? Esta ação não poderá ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteConfirm}
+      />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[580px] bg-card border-border rounded-2xl">

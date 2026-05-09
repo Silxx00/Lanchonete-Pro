@@ -1,0 +1,115 @@
+Você é um engenheiro full-stack sênior especializado em Node.js, TypeScript, Drizzle ORM, PostgreSQL (Neon) e deploy em produção (Render).
+
+Estou com um sistema full-stack já migrado do Replit → GitHub → Render, usando Neon como banco de dados.
+
+O sistema está funcional, porém com DOIS problemas críticos:
+
+---
+
+# ❌ PROBLEMA 1 — SEED DE USUÁRIOS QUEBRA NO RENDER
+
+Erro no deploy:
+- password_hash está vindo como NULL
+- erro: "null value in column 'password_hash' violates not-null constraint"
+- seed tenta criar usuários padrão (admin, gerente, funcionario), mas falha
+
+## BANCO (NEON - CORRETO)
+Tabela users:
+
+- id SERIAL PRIMARY KEY
+- name TEXT NOT NULL
+- email TEXT UNIQUE NOT NULL
+- password_hash TEXT NOT NULL
+- role TEXT NOT NULL CHECK (role IN ('admin', 'gerente', 'funcionario'))
+- active BOOLEAN DEFAULT true
+- created_at TIMESTAMP DEFAULT NOW()
+- updated_at TIMESTAMP DEFAULT NOW()
+
+---
+
+# ❌ PROBLEMA 2 — ACESSO AO PAINEL QUEBRADO
+
+O painel administrativo não está acessando corretamente no Render.
+
+- o site abre
+- mas ao tentar acessar o painel ocorre erro (corrigir rota/autenticação/render build)
+
+---
+
+# ❌ PROBLEMA 3 — FUNÇÃO EXISTENTE MAS INATIVA
+
+Existe uma funcionalidade no painel (frontend) já criada, mas não ativa:
+
+👉 EDIÇÃO DE USUÁRIO (USER MANAGEMENT)
+
+Ela aparece na interface acima do botão "sair da conta", porém:
+
+- não está funcional
+- não conecta com backend
+- não permite editar usuário
+
+---
+
+# 🚀 O QUE VOCÊ DEVE FAZER
+
+## 1. CORRIGIR SEED COMPLETAMENTE
+- garantir que hashPassword() sempre retorna string válida
+- garantir que password_hash nunca seja null/undefined
+- corrigir mismatch entre:
+  - Neon: password_hash
+  - Drizzle: passwordHash
+- garantir insert correto sem usar default em password_hash
+- seed deve funcionar sem erro no Render
+
+---
+
+## 2. CORRIGIR ACESSO AO PAINEL
+- identificar por que o painel não carrega no Render
+- corrigir rotas (frontend/backend)
+- garantir que build está servindo corretamente no deploy
+- garantir autenticação funcionando
+
+---
+
+## 3. ATIVAR FUNÇÃO: EDITAR USUÁRIO
+Implementar completamente:
+
+- endpoint backend para atualizar usuário:
+  - name
+  - email
+  - role
+  - active
+
+- integração com frontend já existente
+- garantir que só admin/gerente podem editar usuários
+- botão já existente no painel deve funcionar
+
+---
+
+## 4. GARANTIR SEGURANÇA E CONSISTÊNCIA
+- manter roles fixos: admin, gerente, funcionario
+- evitar qualquer valor NULL em password_hash
+- manter compatibilidade total com Neon + Render + Drizzle
+- não quebrar estrutura atual do projeto
+
+---
+
+# 🎯 OBJETIVO FINAL
+
+O sistema deve:
+
+✔ subir no Render sem erros  
+✔ seed criar automaticamente os 3 usuários  
+✔ painel abrir corretamente  
+✔ login funcionar  
+✔ edição de usuário funcionar no painel  
+✔ não existir mais erro de null ou constraint  
+
+---
+
+# ⚠️ REGRAS IMPORTANTES
+
+- não mudar arquitetura geral do projeto  
+- não remover funcionalidades existentes  
+- apenas corrigir bugs e ativar função já existente  
+- manter compatibilidade total com produção (Render + Neon)

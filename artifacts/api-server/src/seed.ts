@@ -52,7 +52,7 @@ export async function seedDefaultUsers(): Promise<void> {
       await db.insert(usersTable).values({
         name: user.name,
         email: user.email,
-        password_hash,
+        passwordHash: password_hash,
         role: user.role,
         active: true,
       });

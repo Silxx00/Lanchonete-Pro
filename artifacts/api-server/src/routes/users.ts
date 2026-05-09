@@ -74,12 +74,15 @@ router.patch("/users/:id", requireAuth, requireAdmin, async (req: AuthRequest, r
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { name, email, role, active } = parsed.data;
+  const { name, email, role, active, password } = parsed.data;
   const updateData: Partial<typeof usersTable.$inferInsert> = {};
   if (name != null) updateData.name = name;
   if (email != null) updateData.email = email;
   if (role != null) updateData.role = role;
   if (active != null) updateData.active = active;
+  if (password != null && password !== "") {
+    updateData.passwordHash = await hashPassword(password);
+  }
 
   const [user] = await db
     .update(usersTable)

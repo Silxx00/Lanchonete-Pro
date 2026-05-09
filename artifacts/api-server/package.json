@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node ./build.mjs",
     "start": "node dist/index.js",
-    "dev": "node ./build.mjs && node dist/index.js",
+    "dev": "pnpm --filter @workspace/db run push-force && node ./build.mjs && node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

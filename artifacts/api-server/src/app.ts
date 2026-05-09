@@ -54,7 +54,7 @@ app.use("/api", apiRateLimiter, router);
 const staticDir = path.resolve(__dirname, "public");
 if (fs.existsSync(staticDir)) {
   app.use(express.static(staticDir));
-  app.get("*", (_req: Request, res: Response) => {
+  app.use((_req: Request, res: Response) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 } else {

@@ -1,0 +1,87 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, Express, TypeScript, Drizzle ORM, Neon PostgreSQL, React SPA (Vite) e deploy em Render.
+
+IMPORTANTE: NÃO REFAÇA O PROJETO. NÃO ALTERE ARQUITETURA. NÃO MEXA EM FUNCIONALIDADES QUE JÁ ESTÃO FUNCIONANDO.
+
+---
+
+# 💣 PROBLEMA CRÍTICO ATUAL
+
+O backend está falhando no deploy do Render com erro:
+
+PathError: Missing parameter name at index 1: *
+
+Esse erro vem de uma rota inválida usando wildcard "*" incompatível com path-to-regexp no Express moderno (Node 24).
+
+---
+
+# 🎯 OBJETIVO
+
+Corrigir SOMENTE o erro crítico de inicialização do servidor, sem alterar nada além do necessário.
+
+---
+
+# 🔧 REGRAS OBRIGATÓRIAS
+
+- NÃO modificar estrutura do projeto
+- NÃO alterar autenticação atual
+- NÃO alterar seed de usuários além do necessário
+- NÃO mexer no frontend
+- NÃO mudar banco (Neon)
+- NÃO refatorar arquitetura
+- NÃO reescrever rotas existentes válidas
+
+---
+
+# 🔍 TAREFA 1 — LOCALIZAR O ERRO
+
+Procurar em todo backend:
+
+- "*"
+- "/*"
+- router.route("*")
+- app.use("*")
+- qualquer uso de wildcard inválido
+- qualquer variável que resulte em "*"
+
+---
+
+# 🧨 TAREFA 2 — CORRIGIR APENAS O ERRO
+
+Se encontrar rota inválida "*", REMOVER ou SUBSTITUIR por fallback seguro:
+
+✔ CORREÇÃO CORRETA PARA SPA:
+
+app.use((req, res) => {
+  res.sendFile(path.resolve("dist/public/index.html"));
+});
+
+OU versão segura:
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.resolve("dist/public/index.html"));
+});
+
+---
+
+# ⚠️ REGRA CRÍTICA
+
+Se a rota "*" estiver sendo usada para qualquer outra coisa, ela deve ser eliminada completamente, pois Express moderno NÃO suporta esse formato.
+
+---
+
+# 🧱 TAREFA 3 — GARANTIR QUE NADA QUEBRE
+
+- servidor deve iniciar sem crash
+- rotas existentes devem continuar funcionando
+- login e seed NÃO podem ser alterados
+- banco Neon não pode ser recriado ou resetado
+
+---
+
+# 🚀 RESULTADO FINAL ESPERADO
+
+✔ Render inicia sem erro  
+✔ PathError desaparece  
+✔ SPA continua funcionando  
+✔ backend estável  
+✔ nenhuma funcionalidade quebrada  

@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "pnpm -r --if-present run build",
+    "build": "build": "pnpm --filter @workspace/api-server build && pnpm --filter @workspace/nova-era-admin build"
     "start": "pnpm --filter @workspace/api-server start",
     "dev": "pnpm -r --parallel run dev"
   },

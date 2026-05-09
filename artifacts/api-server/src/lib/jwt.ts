@@ -1,7 +1,13 @@
 import jwt from "jsonwebtoken";
 import { createHash, randomBytes } from "crypto";
 
-const JWT_SECRET = process.env.SESSION_SECRET ?? "nova-era-dev-secret-change-in-production";
+const JWT_SECRET = process.env.SESSION_SECRET;
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET environment variable is required in production.");
+  }
+}
+const JWT_SIGNING_SECRET = JWT_SECRET ?? "nova-era-dev-secret-do-not-use-in-production";
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -14,11 +20,11 @@ export interface JwtPayload {
 }
 
 export function signAccessToken(payload: Omit<JwtPayload, "iat" | "exp">): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL, algorithm: "HS256" });
+  return jwt.sign(payload, JWT_SIGNING_SECRET, { expiresIn: ACCESS_TOKEN_TTL, algorithm: "HS256" });
 }
 
 export function verifyAccessToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as unknown as JwtPayload;
+  return jwt.verify(token, JWT_SIGNING_SECRET, { algorithms: ["HS256"] }) as unknown as JwtPayload;
 }
 
 export function generateRefreshToken(): { raw: string; hash: string; expiresAt: Date } {

@@ -1,0 +1,106 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, TypeScript, Express, Drizzle ORM, PostgreSQL (Neon), autenticação JWT e deploy em Render.
+
+O projeto já está em produção, então NÃO refatore a arquitetura. Apenas corrija bugs críticos mantendo compatibilidade total.
+
+---
+
+# 💥 PROBLEMAS CRÍTICOS ATUAIS
+
+1. LOGIN RETORNANDO 500 (ERRO INTERNO)
+- endpoint: POST /api/auth/login
+- erro provável: passwordHash ausente, bcrypt falhando ou validação quebrando
+- NÃO quebrar o fluxo de login existente
+
+2. POSSÍVEL DUPLICAÇÃO / SOMBRA DE VARIÁVEL
+- código possui "let valid" duplicado ou redefinido
+- isso pode estar causando crash silencioso no runtime
+
+3. USERS PODEM TER passwordHash NULL
+- isso precisa ser tratado sem crash
+- se passwordHash não existir, retornar erro 500 controlado
+
+4. SPA (REACT ROUTER) PRECISA FUNCIONAR EM PRODUÇÃO
+- qualquer rota deve retornar index.html
+- evitar "rota não encontrada"
+
+OBRIGATÓRIO NO EXPRESS:
+app.use(express.static("dist/public"));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve("dist/public/index.html"));
+});
+
+IMPORTANTE:
+- isso deve vir DEPOIS das rotas da API
+
+---
+
+5. SESSION / AUTH SEGURA
+- SESSION_SECRET deve ser obrigatório em produção
+- se não existir, o servidor deve falhar no startup com erro claro
+- NÃO usar fallback inseguro
+
+---
+
+6. LOGIN SEGURANÇA (CRÍTICO)
+Corrigir o fluxo:
+
+- verificar se user existe
+- verificar se user.passwordHash existe antes de bcrypt
+- usar try/catch no verifyPassword
+- garantir que NÃO existe variável duplicada "valid"
+
+Fluxo correto:
+
+if (!user.passwordHash) {
+  return 500 erro controlado
+}
+
+try {
+  const valid = await verifyPassword(password, user.passwordHash)
+} catch {
+  return 500 erro controlado
+}
+
+---
+
+7. RENDER DEPLOY
+- garantir process.env.PORT no listen
+- nunca hardcode de porta
+- garantir servidor sempre retorna 200 na rota "/"
+
+---
+
+# ⚠️ REGRAS IMPORTANTES
+
+- NÃO remover funcionalidades existentes
+- NÃO mudar arquitetura do projeto
+- NÃO quebrar Drizzle schema
+- NÃO alterar estrutura de pastas
+- apenas corrigir bugs críticos
+
+---
+
+# 🎯 OBJETIVO FINAL
+
+O sistema deve:
+
+✔ Login funcionar (admin / gerente / funcionario)
+✔ Não retornar 500 no login
+✔ SPA React funcionar em qualquer rota
+✔ Backend estável no Render
+✔ Session segura com SESSION_SECRET obrigatório
+✔ Não crashar por null passwordHash
+✔ Não ter variável duplicada ou shadow bug
+✔ API continuar intacta
+
+---
+
+# 🔥 IMPORTANTE
+
+Se encontrar qualquer bug adicional crítico que cause crash em produção:
+- corrigir imediatamente
+- sem quebrar compatibilidade
+- mantendo estrutura atual
+
+FOCO TOTAL: estabilidade em produção.

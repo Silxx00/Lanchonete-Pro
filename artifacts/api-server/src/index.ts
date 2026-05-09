@@ -10,9 +10,9 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 if (process.env["NODE_ENV"] === "production" && !process.env["SESSION_SECRET"]) {
-  logger.warn(
-    "SESSION_SECRET is not set in production. Using default dev secret — " +
-    "set SESSION_SECRET in your Render environment variables for security."
+  throw new Error(
+    "SESSION_SECRET is required in production. " +
+    "Set SESSION_SECRET in your Render environment variables."
   );
 }
 

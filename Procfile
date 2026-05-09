@@ -1,1 +1,1 @@
-web: node --enable-source-maps artifacts/api-server/dist/index.js
+web: sh startup.sh

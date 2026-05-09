@@ -9,12 +9,4 @@
     "types": ["node"]
   },
   "include": ["src"]
-{
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
-    "module": "CommonJS",
-    "target": "ES6",
-    "esModuleInterop": true
-  }
 }

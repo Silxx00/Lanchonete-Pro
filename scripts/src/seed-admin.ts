@@ -53,7 +53,7 @@ async function seed() {
 
   console.log("\n🎉 Seed concluído com sucesso!");
   console.log("\n📋 Credenciais de acesso:");
-  console.log("   Admin:       admin@novaera.com       / admin123");
+  console.log("   Admin:       admin@novaera.com       / Admin123");
   console.log("   Gerente:     gerente@novaera.com     / Gerente123");
   console.log("   Funcionário: funcionario@novaera.com / Funcionario123");
 

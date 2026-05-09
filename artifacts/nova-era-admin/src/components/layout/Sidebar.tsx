@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   UserCog,
   User,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,12 +20,13 @@ import { usePermission } from "@/hooks/usePermission";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
-  { name: "Painel",      href: "/dashboard",  icon: LayoutDashboard, minLevel: 1 },
-  { name: "Pedidos",     href: "/orders",      icon: ShoppingCart,    minLevel: 1 },
-  { name: "Produtos",    href: "/products",    icon: Package,         minLevel: 1 },
-  { name: "Categorias",  href: "/categories",  icon: Tags,            minLevel: 1 },
-  { name: "Promoções",   href: "/promotions",  icon: TicketPercent,   minLevel: 2 },
-  { name: "Usuários",    href: "/users",       icon: Users,           minLevel: 3 },
+  { name: "Painel",      href: "/dashboard",   icon: LayoutDashboard, minLevel: 1 },
+  { name: "Pedidos",     href: "/orders",       icon: ShoppingCart,    minLevel: 1 },
+  { name: "Produtos",    href: "/products",     icon: Package,         minLevel: 1 },
+  { name: "Categorias",  href: "/categories",   icon: Tags,            minLevel: 1 },
+  { name: "Promoções",   href: "/promotions",   icon: TicketPercent,   minLevel: 2 },
+  { name: "Financeiro",  href: "/financeiro",   icon: TrendingUp,      minLevel: 2 },
+  { name: "Usuários",    href: "/users",        icon: Users,           minLevel: 3 },
 ];
 
 const ROLE_LEVELS: Record<string, number> = { admin: 3, manager: 2, employee: 1 };

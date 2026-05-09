@@ -15,6 +15,7 @@ const ProductsPage = lazy(() => import("@/pages/ProductsPage"));
 const CategoriesPage = lazy(() => import("@/pages/CategoriesPage"));
 const OrdersPage = lazy(() => import("@/pages/OrdersPage"));
 const PromotionsPage = lazy(() => import("@/pages/PromotionsPage"));
+const FinancialPage = lazy(() => import("@/pages/FinancialPage"));
 const UsersPage = lazy(() => import("@/pages/UsersPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
@@ -119,6 +120,9 @@ function AnimatedRoutes() {
           </Route>
           <Route path="/promotions">
             <ProtectedRoute component={PromotionsPage} minRole="manager" />
+          </Route>
+          <Route path="/financeiro">
+            <ProtectedRoute component={FinancialPage} minRole="manager" />
           </Route>
           <Route path="/users">
             <ProtectedRoute component={UsersPage} minRole="admin" />

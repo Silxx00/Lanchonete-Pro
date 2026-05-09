@@ -6,3 +6,5 @@ export * from "./promotions";
 export * from "./refreshTokens";
 export * from "./auditLogs";
 export * from "./loginAttempts";
+export * from "./expenses";
+export * from "./cashClosings";

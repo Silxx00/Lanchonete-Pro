@@ -1,0 +1,316 @@
+Você é um arquiteto de software sênior especialista em:
+- Node.js
+- TypeScript
+- Express
+- React
+- PostgreSQL
+- Neon
+- Supabase
+- Render
+- otimização SaaS
+- performance web
+- dashboards financeiros
+- autenticação JWT
+- arquitetura escalável
+- correção de projetos do Replit
+
+Sua tarefa é IMPLEMENTAR o novo sistema financeiro e otimizar TODO o painel administrativo SEM REMOVER, QUEBRAR OU ALTERAR a estrutura TypeScript e deploy já configurados anteriormente.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🚨 REGRA MAIS IMPORTANTE
+━━━━━━━━━━━━━━━━━━━━━━
+
+NÃO remover.
+NÃO substituir.
+NÃO quebrar.
+NÃO alterar incorretamente.
+
+A estrutura TypeScript e Render já corrigida anteriormente.
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚠️ OBRIGATÓRIO PRESERVAR
+━━━━━━━━━━━━━━━━━━━━━━
+
+Manter funcionando exatamente:
+
+- src/index.ts
+- estrutura TypeScript
+- dist/
+- tsconfig.json
+- package.json
+- build TypeScript
+- npm run build
+- npm start
+- node dist/index.js
+- compatibilidade com Render
+- compatibilidade com PostgreSQL
+- compatibilidade com Neon/Supabase
+- autenticação JWT
+- sistema de login
+- middleware auth
+- roles admin/gerente/funcionário
+- variáveis de ambiente
+- conexão de banco
+- estrutura de deploy
+
+━━━━━━━━━━━━━━━━━━━━━━
+🚀 OBJETIVO PRINCIPAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Adicionar:
+- sistema financeiro
+- fechamento de caixa
+- histórico financeiro
+- gráficos
+- faturamento mensal
+- análise IA
+- dashboard financeiro
+
+SEM quebrar a estrutura TS/Render já pronta.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🧠 REESTRUTURAÇÃO CONTROLADA
+━━━━━━━━━━━━━━━━━━━━━━
+
+Você pode:
+- reorganizar arquivos
+- melhorar arquitetura
+- otimizar performance
+- criar novos módulos
+
+MAS:
+- sem remover entry point TS
+- sem quebrar dist/
+- sem quebrar build
+- sem alterar start do Render
+- sem remover scripts funcionais
+
+━━━━━━━━━━━━━━━━━━━━━━
+📂 ESTRUTURA TYPESCRIPT
+━━━━━━━━━━━━━━━━━━━━━━
+
+Garantir permanência de:
+
+src/
+  config/
+  database/
+  auth/
+  middleware/
+  routes/
+  controllers/
+  services/
+  models/
+  utils/
+  types/
+  app.ts
+  index.ts
+
+dist/
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚡ COMPATIBILIDADE RENDER
+━━━━━━━━━━━━━━━━━━━━━━
+
+O projeto FINAL deve continuar funcionando com:
+
+Build Command:
+npm install && npm run build
+
+Start Command:
+npm start
+
+Scripts obrigatórios:
+
+"build": "tsc"
+"start": "node dist/index.js"
+"dev": "tsx src/index.ts"
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚡ OTIMIZAÇÃO GLOBAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Otimizar:
+- frontend
+- backend
+- queries
+- gráficos
+- autenticação
+- APIs
+- renderização
+- carregamento
+- banco de dados
+
+Objetivo:
+- menor latência possível
+- menor consumo de RAM
+- menor uso de CPU
+- menor peso no Render
+- máxima fluidez
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚡ PERFORMANCE FRONTEND
+━━━━━━━━━━━━━━━━━━━━━━
+
+Implementar:
+- lazy loading
+- dynamic imports
+- code splitting
+- memoização
+- React.memo
+- useMemo
+- useCallback
+- debounce
+- virtualização
+- carregamento sob demanda
+
+Garantir:
+- baixo bundle
+- baixo uso de memória
+- carregamento rápido
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚡ PERFORMANCE BACKEND
+━━━━━━━━━━━━━━━━━━━━━━
+
+Garantir:
+- queries otimizadas
+- paginação
+- baixo consumo
+- respostas rápidas
+- sem loops pesados
+- sem processamento duplicado
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 SISTEMA FINANCEIRO
+━━━━━━━━━━━━━━━━━━━━━━
+
+Adicionar:
+
+- fechamento de caixa
+- gastos
+- lucro líquido
+- faturamento mensal
+- histórico financeiro
+- relatórios
+- gráficos
+- análise IA
+
+SEM adicionar dados falsos.
+
+Sistema deve iniciar limpo.
+
+━━━━━━━━━━━━━━━━━━━━━━
+📊 DASHBOARD FINANCEIRO
+━━━━━━━━━━━━━━━━━━━━━━
+
+Criar:
+- cards financeiros
+- gráficos leves
+- histórico
+- métricas
+- tendências
+
+Os gráficos devem:
+- carregar sob demanda
+- ser leves
+- evitar renderização excessiva
+
+━━━━━━━━━━━━━━━━━━━━━━
+🧠 IA FINANCEIRA
+━━━━━━━━━━━━━━━━━━━━━━
+
+Criar análise inteligente leve:
+
+- resumo financeiro
+- tendências
+- alertas
+- crescimento
+- análise de gastos
+
+SEM processamento pesado contínuo.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🔐 LOGIN E AUTENTICAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━
+
+PRESERVAR COMPLETAMENTE:
+
+ADMIN
+admin@novaera.com
+admin123
+
+GERENTE
+gerente@novaera.com
+gerente123
+
+FUNCIONÁRIO
+funcionario@novaera.com
+func123
+
+Garantir:
+- login funcionando
+- bcrypt funcionando
+- JWT funcionando
+- roles funcionando
+- middleware funcionando
+
+━━━━━━━━━━━━━━━━━━━━━━
+🗂️ CACHE E MEMÓRIA
+━━━━━━━━━━━━━━━━━━━━━━
+
+Implementar:
+- cache leve
+- invalidação correta
+- evitar memory leak
+- evitar duplicação
+- evitar excesso de RAM
+
+━━━━━━━━━━━━━━━━━━━━━━
+🎨 VISUAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Visual:
+- preto
+- azul royal
+- clean
+- moderno
+- profissional
+- responsivo
+- sem excesso de animações
+
+━━━━━━━━━━━━━━━━━━━━━━
+🚨 PROIBIDO
+━━━━━━━━━━━━━━━━━━━━━━
+
+- quebrar TypeScript
+- remover src/index.ts
+- remover dist/
+- remover build
+- remover scripts do Render
+- quebrar deploy
+- quebrar login
+- remover autenticação
+- usar bibliotecas pesadas desnecessárias
+- adicionar dados mockados
+
+━━━━━━━━━━━━━━━━━━━━━━
+✅ RESULTADO FINAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Ao finalizar:
+
+- deploy Render continua funcionando
+- TypeScript continua funcionando
+- dist/index.js continua funcionando
+- npm run build continua funcionando
+- npm start continua funcionando
+- login continua funcionando
+- sistema financeiro implementado
+- dashboard financeiro funcionando
+- gráficos funcionando
+- IA financeira funcionando
+- performance extremamente otimizada
+- baixa latência
+- baixo consumo de recursos
+- arquitetura profissional
+- pronto para produção real

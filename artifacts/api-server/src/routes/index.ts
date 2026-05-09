@@ -7,6 +7,7 @@ import productsRouter from "./products";
 import ordersRouter from "./orders";
 import promotionsRouter from "./promotions";
 import dashboardRouter from "./dashboard";
+import financialRouter from "./financial";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(productsRouter);
 router.use(ordersRouter);
 router.use(promotionsRouter);
 router.use(dashboardRouter);
+router.use(financialRouter);
 
 export default router;

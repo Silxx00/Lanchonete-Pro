@@ -1,0 +1,146 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, TypeScript, Express, Drizzle ORM, PostgreSQL (Neon), React (SPA) e deploy em produção (Render).
+
+O projeto já está em produção parcial, mas contém bugs críticos de arquitetura, autenticação e rotas.
+
+---
+
+# 💣 CONTEXTO DO PROJETO
+
+- Backend hospedado no Render
+- Banco de dados no Neon (PostgreSQL)
+- Frontend React (SPA) buildado em dist/public
+- Projeto usa monorepo (workspace pnpm)
+- API server separado em artifacts/api-server
+
+---
+
+# ❌ PROBLEMAS ATUAIS
+
+## 1. ERRO DE ROTA (MAIS CRÍTICO)
+- Usuário recebe "rota não encontrada" ao acessar o site
+- React Router não funciona corretamente no deploy
+- Refresh em qualquer rota quebra a aplicação
+
+---
+
+## 2. BACKEND NÃO SERVE FRONTEND CORRETAMENTE
+- dist/public existe após build
+- porém não há fallback para index.html
+- rotas do React não são tratadas no servidor
+
+---
+
+## 3. SEED DE USUÁRIOS (INCONSISTÊNCIA POSSÍVEL)
+- Usuários admin, gerente, funcionario devem existir automaticamente
+- senha deve ser sempre hash com bcrypt
+- evitar password_hash NULL
+- evitar duplicação de seed no restart
+
+---
+
+## 4. AUTENTICAÇÃO / LOGIN
+- login pode falhar se role estiver inválida
+- roles válidas: admin, gerente, funcionario
+- sessão precisa de SESSION_SECRET configurado
+- cookies/sessão devem funcionar em produção
+
+---
+
+## 5. DEPLOY RENDER
+- servidor deve escutar em process.env.PORT
+- não pode hardcode de porta
+- logs indicam warnings de SSL (normal, não crítico)
+
+---
+
+# 🚀 O QUE PRECISA SER FEITO (OBRIGATÓRIO)
+
+## ✔ 1. CORRIGIR SPA (ROUTING FRONTEND)
+
+Adicionar no backend Express:
+
+- servir arquivos estáticos do frontend buildado
+- fallback para React Router
+
+IMPLEMENTAR:
+
+app.use(express.static("dist/public"));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve("dist/public/index.html"));
+});
+
+---
+
+## ✔ 2. GARANTIR ENTRY POINT CORRETO
+
+- localizar arquivo real do backend (api-server)
+- garantir que Express está inicializado corretamente
+- garantir que routes estão registradas antes do fallback
+
+---
+
+## ✔ 3. CORRIGIR SEED DE USUÁRIOS
+
+- garantir bcrypt hash correto
+- nunca inserir password_hash null
+- roles fixas:
+  - admin
+  - gerente
+  - funcionario
+
+- evitar duplicação de seed (verificar email antes de inserir)
+
+---
+
+## ✔ 4. CORRIGIR LOGIN
+
+- validar senha com bcrypt.compare
+- garantir retorno de token ou sessão válida
+- garantir proteção de rotas por role
+
+---
+
+## ✔ 5. CONFIGURAÇÃO DE PRODUÇÃO
+
+- usar process.env.PORT
+- garantir process.env.DATABASE_URL (Neon)
+- adicionar SESSION_SECRET obrigatório
+- nunca usar valores default inseguros em produção
+
+---
+
+## ⚠️ POSSÍVEIS PROBLEMAS QUE DEVEM SER EVITADOS
+
+- build quebrado no Render
+- dist/public não gerado corretamente
+- mismatch entre schema e banco Neon
+- Drizzle insert com campos errados (password_hash vs passwordHash)
+- React build não servido pelo backend
+- rotas do React quebrando em refresh
+- seed rodando múltiplas vezes duplicando usuários
+- CORS bloqueando frontend
+- login funcionando mas não persistindo sessão
+
+---
+
+# 🎯 OBJETIVO FINAL
+
+O sistema deve:
+
+✔ funcionar 100% no Render  
+✔ abrir qualquer rota sem erro (SPA fix)  
+✔ login funcionando com admin/gerente/funcionario  
+✔ seed automático funcionando sem duplicação  
+✔ banco Neon consistente com schema  
+✔ backend estável sem crash  
+✔ frontend servido corretamente pelo Express  
+
+---
+
+# 🚀 REGRAS IMPORTANTES
+
+- não alterar arquitetura geral do projeto
+- não remover funcionalidades existentes
+- apenas corrigir bugs críticos e estabilizar produção
+- manter compatibilidade total com Render + Neon + pnpm workspace

@@ -51,7 +51,7 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.use("/api", apiRateLimiter, router);
 
-const staticDir = path.resolve(process.cwd(), "dist/public");
+const staticDir = path.resolve(__dirname, "public");
 if (fs.existsSync(staticDir)) {
   app.use(express.static(staticDir));
   app.get("*", (_req: Request, res: Response) => {

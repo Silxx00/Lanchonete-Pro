@@ -1,0 +1,93 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, Express, TypeScript, Drizzle ORM e autenticação JWT.
+
+O sistema já está em produção, mas o endpoint /api/auth/login está retornando erro 500 e falhando autenticação.
+
+SUA TAREFA É EXCLUSIVA:
+
+Corrigir SOMENTE o endpoint POST /auth/login dentro do auth.ts.
+
+NÃO altere arquitetura do projeto.
+NÃO remova features existentes.
+NÃO mexa em rotas fora de /auth/login.
+NÃO reescreva o backend inteiro.
+
+---
+
+# 🔥 PROBLEMAS ATUAIS
+
+- erro 500 no login
+- possível mismatch entre password_hash e passwordHash
+- bcrypt falhando quando campo de senha está undefined
+- risco de duplicação de variável "valid"
+- possível crash do router no build
+
+---
+
+# ✔ O QUE VOCÊ DEVE GARANTIR
+
+## 1. Compatibilidade de senha
+
+O sistema pode usar UM dos dois formatos no banco:
+
+- password_hash
+OU
+- passwordHash
+
+Você DEVE suportar os dois sem quebrar.
+
+---
+
+## 2. Segurança do login
+
+- nunca chamar bcrypt com valor undefined
+- sempre validar existência do campo de senha antes
+- se senha não existir → retornar 500 com erro interno controlado
+
+---
+
+## 3. Correção do fluxo
+
+O fluxo correto deve ser:
+
+1. validar body (email e password)
+2. buscar usuário por email normalizado
+3. se usuário não existir → 401
+4. obter senha correta (password_hash OU passwordHash)
+5. validar senha com bcrypt.compare
+6. se inválido → 401
+7. se usuário inativo → 401
+8. gerar accessToken e refreshToken
+9. salvar refreshToken hash no banco
+10. retornar usuário + tokens
+
+---
+
+## 4. PROIBIÇÕES
+
+- não duplicar variável "valid"
+- não alterar outras rotas
+- não mexer em refresh/logout/me
+- não alterar schema do banco
+- não remover logs existentes
+
+---
+
+# 🎯 OBJETIVO FINAL
+
+O endpoint /auth/login deve:
+
+✔ nunca retornar 500 por erro de senha  
+✔ funcionar com qualquer schema (password_hash ou passwordHash)  
+✔ autenticar corretamente admin/gerente/funcionario  
+✔ retornar tokens válidos  
+✔ não quebrar produção no Render  
+
+---
+
+# 🚀 ENTREGÁVEL
+
+Corrigir e reescrever APENAS o bloco:
+
+router.post("/auth/login", ...)
+
+com lógica limpa, segura e funcional em produção.

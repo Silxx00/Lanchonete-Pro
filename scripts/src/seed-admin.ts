@@ -10,9 +10,9 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const users = [
-  { name: "Administrador", email: "admin@lanchonete.com", password: "123456", role: "admin" },
-  { name: "Gerente", email: "gerente@lanchonete.com", password: "123456", role: "manager" },
-  { name: "Funcionário", email: "funcionario@lanchonete.com", password: "123456", role: "employee" },
+  { name: "Administrador", email: "admin@novaera.com", password: "admin123", role: "admin" },
+  { name: "Gerente", email: "gerente@novaera.com", password: "Gerente123", role: "manager" },
+  { name: "Funcionário", email: "funcionario@novaera.com", password: "Funcionario123", role: "employee" },
 ];
 
 const categories = ["Lanches", "Bebidas", "Sobremesas", "Porções", "Combos"];
@@ -53,9 +53,9 @@ async function seed() {
 
   console.log("\n🎉 Seed concluído com sucesso!");
   console.log("\n📋 Credenciais de acesso:");
-  console.log("   Admin:       admin@lanchonete.com       / 123456");
-  console.log("   Gerente:     gerente@lanchonete.com     / 123456");
-  console.log("   Funcionário: funcionario@lanchonete.com / 123456");
+  console.log("   Admin:       admin@novaera.com       / admin123");
+  console.log("   Gerente:     gerente@novaera.com     / Gerente123");
+  console.log("   Funcionário: funcionario@novaera.com / Funcionario123");
 
   await pool.end();
 }

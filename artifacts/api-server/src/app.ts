@@ -1,6 +1,12 @@
 import path from "path";
 import fs from "fs";
-import express, { type Express, type Request, type Response, type NextFunction, type ErrorRequestHandler } from "express";
+import express, {
+  type Express,
+  type Request,
+  type Response,
+  type NextFunction,
+  type ErrorRequestHandler,
+} from "express";
 import cors from "cors";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
@@ -45,7 +51,7 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.use("/api", apiRateLimiter, router);
 
-const staticDir = path.join(__dirname, "public");
+const staticDir = path.resolve(process.cwd(), "dist/public");
 if (fs.existsSync(staticDir)) {
   app.use(express.static(staticDir));
   app.get("*", (_req: Request, res: Response) => {
@@ -57,7 +63,12 @@ if (fs.existsSync(staticDir)) {
   });
 }
 
-const errorHandler: ErrorRequestHandler = (err, _req: Request, res: Response, _next: NextFunction) => {
+const errorHandler: ErrorRequestHandler = (
+  err,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+) => {
   logger.error({ err }, "Unhandled error");
   const status =
     (err as { status?: number; statusCode?: number }).status ??

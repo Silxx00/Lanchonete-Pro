@@ -1,0 +1,78 @@
+Analise completamente o sistema de autenticação deste projeto Node.js (painel administrativo de lanchonete) e corrija o problema de login que está impedindo acesso de ADMIN, GERENTE e FUNCIONÁRIO.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🎯 OBJETIVO
+━━━━━━━━━━━━━━━━━━━━━━
+
+Garantir que o login funcione corretamente com credenciais válidas e que o sistema permita autenticação correta para todos os níveis de usuário.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🧠 TAREFAS OBRIGATÓRIAS
+━━━━━━━━━━━━━━━━━━━━━━
+
+1. Identificar o sistema de autenticação atual:
+   - verificar controller de login
+   - verificar model de usuário
+   - verificar validação de email/senha
+
+2. Corrigir qualquer problema de comparação de senha:
+   - se estiver usando bcrypt, garantir uso correto de compare()
+   - se estiver usando senha em texto puro, padronizar corretamente (ou ajustar hash)
+   - corrigir possíveis erros de encoding ou hash inválido
+
+3. Verificar banco de dados:
+   - garantir que existem usuários seed:
+     - admin
+     - gerente
+     - funcionário
+   - se não existirem, criar seed automático
+
+4. Corrigir validação de login:
+   - email deve ser comparado corretamente (case insensitive)
+   - senha deve bater corretamente com o banco
+   - remover qualquer validação quebrada ou hardcoded errada
+
+5. Garantir que o login retorna corretamente:
+   - token JWT válido (se usado)
+   - ou sessão ativa correta
+   - role do usuário correta (admin/gerente/funcionario)
+
+6. Criar ou corrigir usuários padrão (SEED OBRIGATÓRIO):
+   Criar automaticamente se não existirem:
+
+   ADMIN:
+   email: admin@lanchonete.com
+   senha: 123456
+
+   GERENTE:
+   email: gerente@lanchonete.com
+   senha: 123456
+
+   FUNCIONÁRIO:
+   email: funcionario@lanchonete.com
+   senha: 123456
+
+7. Garantir que o login funcione imediatamente após deploy:
+   - sem erro de "email ou senha incorretos"
+   - sem falha de hash
+   - sem dependência de dados faltando
+
+━━━━━━━━━━━━━━━━━━━━━━
+🔐 REGRAS IMPORTANTES
+━━━━━━━━━━━━━━━━━━━━━━
+
+- NÃO quebrar segurança geral do sistema
+- Apenas corrigir autenticação e seed de usuários
+- Garantir compatibilidade com produção
+- Garantir que funciona em Render (env vars OK)
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚡ RESULTADO FINAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Depois da correção:
+
+- Login deve funcionar com os usuários padrão
+- ADMIN / GERENTE / FUNCIONÁRIO devem conseguir acessar corretamente
+- Não deve existir erro de credenciais inválidas com dados corretos
+- Sistema deve estar pronto para produção

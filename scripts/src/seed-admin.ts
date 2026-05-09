@@ -10,9 +10,9 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const users = [
-  { name: "Administrador", email: "admin@novaera.com", password: "admin123", role: "admin" },
-  { name: "Gerente", email: "gerente@novaera.com", password: "gerente123", role: "manager" },
-  { name: "Funcionário", email: "funcionario@novaera.com", password: "func123", role: "employee" },
+  { name: "Administrador", email: "admin@lanchonete.com", password: "123456", role: "admin" },
+  { name: "Gerente", email: "gerente@lanchonete.com", password: "123456", role: "manager" },
+  { name: "Funcionário", email: "funcionario@lanchonete.com", password: "123456", role: "employee" },
 ];
 
 const categories = ["Lanches", "Bebidas", "Sobremesas", "Porções", "Combos"];
@@ -21,17 +21,21 @@ async function seed() {
   console.log("🌱 Iniciando seed do banco de dados...\n");
 
   for (const u of users) {
+    const hash = await bcrypt.hash(u.password, 10);
     const existing = await pool.query("SELECT id FROM users WHERE email = $1", [u.email]);
     if (existing.rows.length > 0) {
-      console.log(`✓ Usuário já existe: ${u.email}`);
-      continue;
+      await pool.query(
+        "UPDATE users SET password_hash = $1, name = $2, role = $3, active = true WHERE email = $4",
+        [hash, u.name, u.role, u.email]
+      );
+      console.log(`✅ Atualizado: ${u.email} (nova senha: ${u.password}) — perfil: ${u.role}`);
+    } else {
+      await pool.query(
+        "INSERT INTO users (name, email, password_hash, role, active) VALUES ($1, $2, $3, $4, true)",
+        [u.name, u.email, hash, u.role]
+      );
+      console.log(`✅ Criado: ${u.email} (senha: ${u.password}) — perfil: ${u.role}`);
     }
-    const hash = await bcrypt.hash(u.password, 10);
-    await pool.query(
-      "INSERT INTO users (name, email, password_hash, role, active) VALUES ($1, $2, $3, $4, true)",
-      [u.name, u.email, hash, u.role]
-    );
-    console.log(`✅ Criado: ${u.email} (senha: ${u.password}) — perfil: ${u.role}`);
   }
 
   for (const name of categories) {
@@ -49,9 +53,9 @@ async function seed() {
 
   console.log("\n🎉 Seed concluído com sucesso!");
   console.log("\n📋 Credenciais de acesso:");
-  console.log("   Admin:       admin@novaera.com       / admin123");
-  console.log("   Gerente:     gerente@novaera.com     / gerente123");
-  console.log("   Funcionário: funcionario@novaera.com / func123");
+  console.log("   Admin:       admin@lanchonete.com       / 123456");
+  console.log("   Gerente:     gerente@lanchonete.com     / 123456");
+  console.log("   Funcionário: funcionario@lanchonete.com / 123456");
 
   await pool.end();
 }

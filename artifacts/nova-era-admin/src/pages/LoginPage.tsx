@@ -21,9 +21,9 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 const QUICK_ACCESS = [
-  { label: "Admin", email: "admin@novaera.com", password: "admin123", color: "text-blue-400 border-blue-500/30 hover:bg-blue-500/10" },
-  { label: "Gerente", email: "gerente@novaera.com", password: "gerente123", color: "text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10" },
-  { label: "Funcionário", email: "funcionario@novaera.com", password: "func123", color: "text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10" },
+  { label: "Admin", email: "admin@lanchonete.com", password: "123456", color: "text-blue-400 border-blue-500/30 hover:bg-blue-500/10" },
+  { label: "Gerente", email: "gerente@lanchonete.com", password: "123456", color: "text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10" },
+  { label: "Funcionário", email: "funcionario@lanchonete.com", password: "123456", color: "text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10" },
 ];
 
 export default function LoginPage() {

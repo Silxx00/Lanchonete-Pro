@@ -1,0 +1,312 @@
+Você é um engenheiro de software sênior especialista em:
+- Node.js
+- TypeScript
+- Express
+- PostgreSQL
+- Neon
+- Supabase
+- Render
+- autenticação JWT
+- bcrypt
+- arquitetura backend SaaS
+- correção de projetos quebrados do Replit
+
+Sua missão é FAZER UMA CORREÇÃO COMPLETA E PROFISSIONAL deste projeto para deixá-lo TOTALMENTE FUNCIONAL em produção.
+
+O sistema atualmente possui:
+- erro de deploy no Render
+- npm start quebrado
+- build TypeScript quebrado
+- ausência de entry point funcional
+- dist não sendo gerado corretamente
+- estrutura .ts desorganizada
+- imports quebrados
+- conflitos npm/pnpm
+- dependências do Replit
+- sistema de login quebrado
+- autenticação inconsistente
+- usuários não conseguem logar
+- possíveis problemas de bcrypt/JWT/database
+
+━━━━━━━━━━━━━━━━━━━━━━
+🎯 OBJETIVO FINAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Transformar este projeto em uma aplicação PROFISSIONAL, ESTÁVEL e PRONTA PARA PRODUÇÃO no Render.
+
+O projeto DEVE funcionar perfeitamente com:
+
+npm install
+npm run build
+npm start
+
+SEM nenhuma correção manual adicional.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🚨 REGRAS ABSOLUTAS
+━━━━━━━━━━━━━━━━━━━━━━
+
+- NÃO quebrar funcionalidades existentes
+- NÃO remover lógica importante do painel
+- NÃO deixar arquivos quebrados
+- NÃO deixar imports inválidos
+- NÃO manter scripts do Replit
+- NÃO manter dependências conflitantes
+- NÃO deixar múltiplos entry points
+- NÃO deixar autenticação inconsistente
+- NÃO deixar login parcialmente funcional
+
+Escolha SEMPRE:
+- estabilidade
+- arquitetura limpa
+- compatibilidade com produção
+- compatibilidade total com Render
+
+━━━━━━━━━━━━━━━━━━━━━━
+🧠 TAREFAS OBRIGATÓRIAS
+━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━
+1. ANALISAR TODO O PROJETO
+━━━━━━━━
+
+- localizar backend principal
+- localizar frontend
+- identificar entry point correto
+- identificar conflitos TypeScript
+- identificar problemas de build
+- identificar problemas de autenticação
+- identificar imports quebrados
+- identificar problemas de banco
+- identificar problemas de start
+
+━━━━━━━━
+2. REORGANIZAR ESTRUTURA TYPESCRIPT
+━━━━━━━━
+
+Criar estrutura profissional:
+
+src/
+  config/
+  database/
+  auth/
+  middleware/
+  routes/
+  controllers/
+  services/
+  models/
+  utils/
+  types/
+  app.ts
+  index.ts
+
+dist/
+
+━━━━━━━━
+3. CRIAR ENTRY POINT FUNCIONAL
+━━━━━━━━
+
+Garantir:
+- src/index.ts funcional
+- inicialização correta do servidor
+- apenas um start principal
+
+Obrigatório:
+
+const PORT = process.env.PORT || 3000
+
+━━━━━━━━
+4. CONFIGURAR TYPESCRIPT PROFISSIONAL
+━━━━━━━━
+
+Corrigir:
+- imports
+- exports
+- aliases
+- CommonJS/ESM
+- módulos quebrados
+- caminhos relativos
+
+Garantir compilação limpa.
+
+━━━━━━━━
+5. CONFIGURAR tsconfig.json
+━━━━━━━━
+
+Garantir:
+
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "CommonJS",
+    "rootDir": "src",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": false,
+    "skipLibCheck": true
+  }
+}
+
+━━━━━━━━
+6. CONFIGURAR package.json COMPLETO
+━━━━━━━━
+
+Garantir:
+
+"scripts": {
+  "build": "tsc",
+  "start": "node dist/index.js",
+  "dev": "tsx src/index.ts"
+}
+
+Remover:
+- scripts do Replit
+- bloqueios pnpm
+- scripts inválidos
+- preinstall forçando pnpm
+
+━━━━━━━━
+7. GARANTIR BUILD FUNCIONAL
+━━━━━━━━
+
+Após:
+npm run build
+
+Deve existir:
+dist/index.js
+
+Garantir:
+- compilação completa
+- nenhum .ts em runtime
+- nenhum missing module
+
+━━━━━━━━
+8. CORRIGIR COMPLETAMENTE O LOGIN
+━━━━━━━━
+
+O sistema DEVE permitir login funcional imediatamente.
+
+Criar seed automático obrigatório:
+
+ADMIN
+email: admin@novaera.com
+senha: admin123
+
+GERENTE
+email: gerente@novaera.com
+senha: gerente123
+
+FUNCIONÁRIO
+email: funcionario@novaera.com
+senha: func123
+
+Garantir:
+- criação automática no banco
+- sem duplicação
+- persistência correta
+
+━━━━━━━━
+9. CORRIGIR AUTENTICAÇÃO
+━━━━━━━━
+
+Corrigir completamente:
+- bcrypt.compare
+- hash de senha
+- JWT
+- middleware auth
+- roles
+- persistência de sessão
+- cookies/token
+- validação de email
+- comparação case insensitive
+- login admin/gerente/funcionario
+
+Nenhum login válido pode retornar:
+"email ou senha incorretos"
+
+━━━━━━━━
+10. CORRIGIR BANCO DE DADOS
+━━━━━━━━
+
+Garantir compatibilidade total com:
+- PostgreSQL
+- Neon
+- Supabase
+- Render
+
+Garantir:
+- DATABASE_URL funcionando
+- conexão estável
+- tratamento de erro
+- reconnect seguro
+
+━━━━━━━━
+11. REMOVER DEPENDÊNCIAS DO REPLIT
+━━━━━━━━
+
+Eliminar:
+- runtime específico do Replit
+- configs quebradas
+- hacks temporários
+- comportamento incompatível com produção
+
+━━━━━━━━
+12. GARANTIR COMPATIBILIDADE TOTAL COM RENDER
+━━━━━━━━
+
+O projeto FINAL deve funcionar no Render com:
+
+Build Command:
+npm install && npm run build
+
+Start Command:
+npm start
+
+Environment Variables:
+NODE_ENV=production
+DATABASE_URL=...
+JWT_SECRET=...
+
+━━━━━━━━
+13. VALIDAÇÃO FINAL OBRIGATÓRIA
+━━━━━━━━
+
+Validar completamente:
+
+npm install
+npm run build
+npm start
+
+Garantir:
+- sem crash
+- sem erro de start
+- sem erro de build
+- sem erro de login
+- sem erro JWT
+- sem erro bcrypt
+- sem erro de imports
+- sem erro de banco
+- sem erro de porta
+- sem erro de dist
+
+━━━━━━━━━━━━━━━━━━━━━━
+🚀 RESULTADO FINAL ESPERADO
+━━━━━━━━━━━━━━━━━━━━━━
+
+Ao terminar:
+
+- deploy funcionando no Render
+- login funcionando
+- admin funcionando
+- gerente funcionando
+- funcionário funcionando
+- TypeScript organizado
+- dist/index.js funcionando
+- backend profissional
+- arquitetura limpa
+- produção estável
+- zero correções manuais necessárias
+
+Se houver qualquer ambiguidade:
+Escolha SEMPRE a solução mais estável, limpa e profissional para produção cloud.

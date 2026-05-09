@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lte, count, sum, desc } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, promotionsTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, productsTable, promotionsTable } from "../db";
 import { inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth";
 import {
@@ -8,7 +8,7 @@ import {
   GetSalesChartResponse,
   GetTopProductsResponse,
   GetRecentOrdersResponse,
-} from "@workspace/api-zod";
+} from "../validation/api";
 
 const router: IRouter = Router();
 

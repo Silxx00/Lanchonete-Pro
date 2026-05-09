@@ -1,4 +1,4 @@
-import { db, auditLogsTable } from "@workspace/db";
+import { db, auditLogsTable } from "../db";
 import { logger } from "./logger";
 import type { Request } from "express";
 

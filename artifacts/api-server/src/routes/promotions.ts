@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, promotionsTable } from "@workspace/db";
+import { db, promotionsTable } from "../db";
 import { auditLog } from "../lib/audit";
 import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
 import {
@@ -12,7 +12,7 @@ import {
   ListPromotionsResponse,
   GetPromotionResponse,
   UpdatePromotionResponse,
-} from "@workspace/api-zod";
+} from "../validation/api";
 
 const router: IRouter = Router();
 

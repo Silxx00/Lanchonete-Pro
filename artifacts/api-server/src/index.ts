@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { pool } from "@workspace/db";
+import { pool } from "./db";
+import { seedDefaultUsers } from "./seed";
 
 const port = Number(process.env["PORT"] ?? "3000");
 
@@ -17,6 +18,7 @@ if (process.env["NODE_ENV"] === "production" && !process.env["SESSION_SECRET"]) 
 
 const server = app.listen(port, "0.0.0.0", () => {
   logger.info({ port, host: "0.0.0.0" }, "Server listening");
+  seedDefaultUsers();
 });
 
 server.on("error", (err) => {

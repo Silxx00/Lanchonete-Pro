@@ -1,13 +1,13 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lt } from "drizzle-orm";
-import { db, usersTable, refreshTokensTable, loginAttemptsTable } from "@workspace/db";
+import { db, usersTable, refreshTokensTable, loginAttemptsTable } from "../db";
 import { hashPassword, verifyPassword } from "../lib/password";
 import { signAccessToken, generateRefreshToken, hashRefreshToken, verifyAccessToken } from "../lib/jwt";
 import { auditLog } from "../lib/audit";
 import { loginRateLimiter } from "../middleware/rateLimiter";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { logger } from "../lib/logger";
-import { LoginBody, GetMeResponse } from "@workspace/api-zod";
+import { LoginBody, GetMeResponse } from "../validation/api";
 
 const router: IRouter = Router();
 
@@ -63,32 +63,33 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
   }
 
   const { email, password } = parsed.data;
+  const normalizedEmail = email.toLowerCase().trim();
   const ip =
     (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ??
     req.socket.remoteAddress ??
     null;
 
-  const recentFailures = await countRecentFailures(email, ip);
+  const recentFailures = await countRecentFailures(normalizedEmail, ip);
   if (recentFailures >= LOCKOUT_MAX_ATTEMPTS) {
-    await auditLog({ action: "login_blocked", entity: "auth", details: { email, reason: "brute_force" }, req });
+    await auditLog({ action: "login_blocked", entity: "auth", details: { email: normalizedEmail, reason: "brute_force" }, req });
     res.status(429).json({
       error: "Conta temporariamente bloqueada por excesso de tentativas. Tente novamente em 15 minutos.",
     });
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, normalizedEmail));
 
   if (!user) {
-    await recordAttempt(email, ip, false);
-    await auditLog({ action: "login_failed", entity: "auth", details: { email, reason: "user_not_found" }, req });
+    await recordAttempt(normalizedEmail, ip, false);
+    await auditLog({ action: "login_failed", entity: "auth", details: { email: normalizedEmail, reason: "user_not_found" }, req });
     res.status(401).json({ error: "Email ou senha inválidos" });
     return;
   }
 
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) {
-    await recordAttempt(email, ip, false);
+    await recordAttempt(normalizedEmail, ip, false);
     await auditLog({ userId: user.id, userEmail: user.email, action: "login_failed", entity: "auth", details: { reason: "wrong_password" }, req });
     res.status(401).json({ error: "Email ou senha inválidos" });
     return;
@@ -100,7 +101,7 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     return;
   }
 
-  await recordAttempt(email, ip, true);
+  await recordAttempt(normalizedEmail, ip, true);
 
   const accessToken = signAccessToken({ sub: user.id, email: user.email, role: user.role });
   const { raw: refreshTokenRaw, hash: refreshTokenHash, expiresAt } = generateRefreshToken();

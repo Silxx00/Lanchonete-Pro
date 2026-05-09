@@ -1,0 +1,93 @@
+Você é um engenheiro sênior de backend especializado em Node.js e deploy em produção.
+
+Sua tarefa é ANALISAR, REESTRUTURAR E CORRIGIR COMPLETAMENTE este projeto para que ele esteja 100% pronto para deploy em ambiente cloud (Render).
+
+O objetivo é eliminar qualquer erro de build, start, dependência ou incompatibilidade.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🔴 OBJETIVO FINAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+O projeto deve rodar perfeitamente com:
+
+npm install
+npm start
+
+E estar 100% compatível com deploy no Render sem nenhuma alteração manual adicional.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🧠 REGRAS OBRIGATÓRIAS
+━━━━━━━━━━━━━━━━━━━━━━
+
+1. Identificar corretamente o ENTRY POINT do projeto (server principal).
+   - Ex: index.js, server.js, app.js ou equivalente
+   - Se houver dúvida, analisar fluxo de execução e exports
+
+2. Corrigir package.json:
+   - Garantir script obrigatório:
+     "start": "node <arquivo_principal>"
+   - Remover scripts inválidos, redundantes ou do Replit
+   - Garantir compatibilidade com npm (NÃO depender de pnpm)
+
+3. Remover dependência obrigatória de pnpm, Replit configs ou lockfiles conflitantes:
+   - .replit
+   - pnpm-lock.yaml (se causar conflito)
+   - scripts forçando pnpm
+
+4. Corrigir totalmente a inicialização do servidor:
+   - O servidor DEVE usar:
+     process.env.PORT
+   - Exemplo obrigatório:
+     app.listen(process.env.PORT || 3000)
+
+5. Garantir compatibilidade 100% com ambiente cloud:
+   - Não usar caminhos absolutos quebráveis
+   - Não depender de arquivos locais do Replit
+   - Garantir que variáveis de ambiente sejam usadas corretamente
+
+6. Validar e corrigir imports:
+   - Remover imports quebrados
+   - Corrigir paths relativos
+   - Garantir que não existam módulos faltando
+
+7. Garantir que o projeto inicia com sucesso:
+   - npm install sem erro
+   - npm start sem erro
+   - servidor sobe sem crash
+
+8. Se houver múltiplos servers ou duplicidade:
+   - consolidar em um único entry point limpo
+
+━━━━━━━━━━━━━━━━━━━━━━
+🧹 LIMPEZA OBRIGATÓRIA
+━━━━━━━━━━━━━━━━━━━━━━
+
+- Remover código de debug desnecessário
+- Remover arquivos gerados pelo Replit que não são usados em produção
+- Padronizar estrutura do backend
+- Garantir organização mínima profissional
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚡ PADRÃO DE PRODUÇÃO
+━━━━━━━━━━━━━━━━━━━━━━
+
+Quero um projeto com estrutura limpa, previsível e pronta para deploy:
+
+- entry point único
+- scripts corretos
+- dependências consistentes
+- servidor compatível com Render
+- sem dependência de ambiente Replit
+
+━━━━━━━━━━━━━━━━━━━━━━
+🎯 RESULTADO FINAL
+━━━━━━━━━━━━━━━━━━━━━━
+
+Depois da sua correção:
+
+- O projeto deve rodar localmente sem erros
+- Deve iniciar com npm start
+- Deve estar pronto para deploy no Render imediatamente
+- Não pode exigir nenhuma correção manual adicional
+
+Se houver qualquer ambiguidade, escolha a solução mais estável e profissional para produção.

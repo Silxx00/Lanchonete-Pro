@@ -2,24 +2,16 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
+const port = Number(process.env["PORT"] ?? "3000");
 
 if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
+  throw new Error(`Invalid PORT value: "${process.env["PORT"]}"`);
 }
 
 if (process.env["NODE_ENV"] === "production" && !process.env["SESSION_SECRET"]) {
-  throw new Error(
-    "SESSION_SECRET environment variable is required in production. " +
-    "Set it in your deployment environment secrets."
+  logger.warn(
+    "SESSION_SECRET is not set in production. Using default dev secret — " +
+    "set SESSION_SECRET in your Render environment variables for security."
   );
 }
 

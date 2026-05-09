@@ -1,0 +1,108 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, TypeScript, Express, Drizzle ORM, PostgreSQL (Neon) e deploy em produção (Render).
+
+O projeto já está em produção, então qualquer alteração deve ser mínima, segura e sem quebrar funcionalidades existentes.
+
+💥 PROBLEMA CRÍTICO ATUAL
+
+O endpoint de login está retornando 500 Internal Server Error em produção no Render.
+
+O backend está funcionando, banco conecta corretamente, mas o login falha internamente.
+
+🎯 OBJETIVO
+
+Corrigir o login da API /api/auth/login garantindo:
+
+funcionamento em produção no Render
+compatibilidade total com Neon (PostgreSQL)
+compatibilidade com Drizzle ORM
+sem quebrar autenticação existente
+sem alterar arquitetura geral do projeto
+⚠️ CONSTRAINTS (OBRIGATÓRIO RESPEITAR)
+NÃO mudar estrutura do projeto
+NÃO remover features existentes
+NÃO alterar rotas além do necessário
+NÃO refatorar arquitetura
+apenas correções pontuais e seguras
+🔥 CAUSA MAIS PROVÁVEL DO ERRO
+
+Existe um mismatch entre o schema do banco e o código:
+
+campo pode ser password_hash no banco
+mas código pode estar usando passwordHash
+isso faz verifyPassword() receber undefined
+resultando em erro 500 no login
+🛠️ TAREFAS OBRIGATÓRIAS
+1. CORRIGIR MAPEAMENTO DE SENHA
+
+Verificar no schema do usersTable qual campo existe:
+
+password_hash OU passwordHash
+
+E ajustar o login para usar exatamente o mesmo nome.
+
+Exemplo esperado:
+
+await verifyPassword(password, user.password_hash);
+
+OU
+
+await verifyPassword(password, user.passwordHash);
+
+(dependendo do schema real)
+
+2. PROTEGER LOGIN CONTRA CRASH
+
+Garantir que o login nunca quebre com undefined:
+
+validar se user existe
+validar se password field existe
+adicionar fallback seguro antes de bcrypt compare
+3. MELHORAR LOG DE ERRO (DEBUG PRODUÇÃO)
+
+Adicionar temporariamente:
+
+console.error("LOGIN ERROR DETAILS:", err);
+
+sem expor dados sensíveis ao usuário.
+
+4. GARANTIR COMPATIBILIDADE COM NEON
+manter Drizzle ORM intacto
+não alterar conexão DATABASE_URL
+não alterar schema no banco sem necessidade
+5. GARANTIR QUE LOGIN CONTINUA FUNCIONANDO
+
+O login deve continuar retornando:
+
+{
+  accessToken,
+  refreshToken,
+  user: {
+    id,
+    name,
+    email,
+    role
+  }
+}
+⚠️ ERROS QUE NÃO PODEM MAIS ACONTECER
+passwordHash undefined
+password_hash mismatch
+bcrypt crash
+login 500 internal error
+role inválida
+query quebrando no Drizzle
+🎯 RESULTADO ESPERADO
+
+Após correção:
+
+✔ login funciona em produção (Render)
+✔ login funciona localmente
+✔ Neon sem erro
+✔ seed de usuários permanece intacto
+✔ autenticação segura com bcrypt
+✔ nenhuma rota quebrada
+
+💡 IMPORTANTE
+
+Faça apenas correções cirúrgicas.
+Não reescreva o sistema inteiro.
+Priorize estabilidade de produção.

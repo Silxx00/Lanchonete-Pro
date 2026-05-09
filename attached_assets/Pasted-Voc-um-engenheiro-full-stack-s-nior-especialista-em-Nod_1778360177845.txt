@@ -1,0 +1,109 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, TypeScript, Express, Drizzle ORM e PostgreSQL (Neon).
+O projeto já está em produção no Render, mas possui bugs críticos no sistema de autenticação.
+
+💣 OBJETIVO
+
+Corrigir completamente o sistema de login sem quebrar nenhuma outra parte do sistema.
+
+Manter:
+
+arquitetura atual
+rotas existentes
+banco Neon
+Drizzle ORM
+estrutura de users/roles
+❌ PROBLEMA ATUAL
+
+O endpoint /auth/login está retornando 500 Internal Server Error.
+
+Isso acontece por problemas no fluxo de autenticação e possível mismatch entre banco e código.
+
+🔥 O QUE DEVE SER CORRIGIDO
+✔ 1. CORRIGIR LOGIN (CRÍTICO)
+
+No arquivo auth.ts, corrigir o fluxo de verificação de senha:
+
+REGRAS OBRIGATÓRIAS:
+nunca chamar bcrypt antes de validar existência do hash
+evitar duplicação de variável valid
+garantir tratamento de erro no bcrypt
+garantir retorno correto de 401 para senha inválida
+garantir 500 apenas para erro interno real
+✔ IMPLEMENTAÇÃO CORRETA DO LOGIN
+
+Substituir APENAS a parte de validação de senha por este padrão:
+
+if (!user.passwordHash) {
+  logger.error({ user }, "passwordHash ausente no usuário");
+  return res.status(500).json({ error: "Erro interno de autenticação" });
+}
+
+let valid: boolean;
+
+try {
+  valid = await verifyPassword(password, user.passwordHash);
+} catch (err) {
+  logger.error({ err }, "Erro no bcrypt verifyPassword");
+  return res.status(500).json({ error: "Erro interno de autenticação" });
+}
+
+if (!valid) {
+  await recordAttempt(normalizedEmail, ip, false);
+  await auditLog({
+    userId: user.id,
+    userEmail: user.email,
+    action: "login_failed",
+    entity: "auth",
+    details: { reason: "wrong_password" },
+    req
+  });
+
+  return res.status(401).json({ error: "Email ou senha inválidos" });
+}
+✔ 2. GARANTIR CONSISTÊNCIA DO DRIZZLE (CRÍTICO)
+
+Verificar usersTable schema:
+
+deve usar exatamente:
+passwordHash: text("password_hash").notNull()
+nunca usar password_hash direto no TS
+garantir que o retorno do banco seja user.passwordHash
+✔ 3. GARANTIR SEED CORRETO
+
+Seed deve:
+
+sempre usar hashPassword
+nunca inserir password_hash manual
+evitar duplicação por email
+criar usuários padrão:
+admin@novaera.com / admin123
+gerente@novaera.com / gerente123
+funcionario@novaera.com / func123
+✔ 4. PROTEÇÃO DE ERROS
+
+Adicionar logs claros:
+
+logar user retornado do banco no login (debug)
+logar erro do bcrypt
+evitar erro genérico sem contexto
+✔ 5. GARANTIR ESTABILIDADE
+não alterar arquitetura geral
+não remover rotas existentes
+não modificar estrutura do frontend
+apenas corrigir autenticação
+⚠️ PROBLEMAS QUE DEVEM SER EVITADOS
+duplicação de variáveis (valid)
+bcrypt recebendo undefined
+schema mismatch (password_hash vs passwordHash)
+login retornando 500 sem motivo real
+seed duplicando usuários
+login sem logs de debug
+🎯 RESULTADO ESPERADO
+
+Após correção:
+
+login funciona em produção (Render)
+admin/gerente/funcionario acessam corretamente
+erro 500 desaparece
+sistema estável e seguro
+logs claros para debug futuro

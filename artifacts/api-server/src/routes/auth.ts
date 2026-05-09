@@ -87,7 +87,21 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     return;
   }
 
-  const valid = await verifyPassword(password, user.passwordHash);
+  if (!user.passwordHash) {
+    logger.error({ userId: user.id, email: user.email }, "passwordHash ausente no usuário");
+    res.status(500).json({ error: "Erro interno de autenticação" });
+    return;
+  }
+
+  let valid: boolean;
+  try {
+    valid = await verifyPassword(password, user.passwordHash);
+  } catch (err) {
+    logger.error({ err }, "Erro no bcrypt verifyPassword");
+    res.status(500).json({ error: "Erro interno de autenticação" });
+    return;
+  }
+
   if (!valid) {
     await recordAttempt(normalizedEmail, ip, false);
     await auditLog({ userId: user.id, userEmail: user.email, action: "login_failed", entity: "auth", details: { reason: "wrong_password" }, req });

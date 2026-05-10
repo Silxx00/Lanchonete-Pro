@@ -1,0 +1,120 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, TypeScript, Express, Drizzle ORM e PostgreSQL (Neon).
+
+O sistema atual é um cardápio digital com painel administrativo e autenticação. Após mudanças recentes, o sistema está com falhas na criação de categorias/produtos e possível bloqueio de requisições.
+
+⚠️ OBJETIVO GERAL
+
+Corrigir completamente o sistema para garantir:
+
+Login funcional com usuários fixos
+Criação de categorias funcionando 100%
+Criação de produtos funcionando 100%
+API estável e sem bloqueios indevidos
+Integração frontend → backend → Neon correta
+Sem erros silenciosos
+💥 PROBLEMAS A SEREM CORRIGIDOS
+🔴 1. CRIAÇÃO DE CATEGORIAS NÃO FUNCIONA
+POST /categories pode não estar recebendo req.body
+possível rota não chamada
+possível erro de middleware bloqueando request
+🔴 2. CRIAÇÃO DE PRODUTOS NÃO FUNCIONA
+POST /products falhando
+categoryId pode não estar chegando
+possível erro no Drizzle insert
+🔴 3. LOGIN MODIFICADO (USUÁRIOS FIXOS)
+sistema agora usa usuários fixos:
+admin@novaera.com
+ / admin123
+gerente@novaera.com
+ / gerente123
+funcionario@novaera.com
+ / func123
+garantir que isso NÃO bloqueie outras rotas do sistema
+🔴 4. POSSÍVEL BLOQUEIO GLOBAL
+verificar se middleware de autenticação está bloqueando categorias/produtos
+garantir que apenas rotas protegidas usem auth
+🔴 5. POSSÍVEL ERRO DE ROTA (/api)
+confirmar se frontend está chamando:
+/api/categories
+/api/products
+e não rotas sem prefixo
+🔧 CORREÇÕES OBRIGATÓRIAS
+1. GARANTIR QUE JSON FUNCIONA
+app.use(express.json());
+2. ADICIONAR LOGS DE DEBUG NAS ROTAS
+Categories:
+console.log("CREATE CATEGORY BODY:", req.body);
+Products:
+console.log("CREATE PRODUCT BODY:", req.body);
+3. GARANTIR ROTAS FUNCIONAIS
+
+As rotas devem:
+
+receber req.body corretamente
+validar campos obrigatórios
+usar Drizzle ORM corretamente
+NÃO bloquear por autenticação indevida
+4. USAR DRIZZLE CORRETAMENTE
+Categories:
+db.insert(categoriesTable).values({
+  name,
+  description,
+  imageUrl,
+  active,
+});
+Products:
+db.insert(productsTable).values({
+  name,
+  description,
+  price,
+  imageUrl,
+  categoryId,
+  stock,
+  active,
+  featured,
+});
+5. LOGIN FIXO (SEM AFETAR OUTRAS ROTAS)
+
+Manter login apenas com:
+
+admin@novaera.com
+ / admin123
+gerente@novaera.com
+ / gerente123
+funcionario@novaera.com
+ / func123
+
+E garantir que:
+
+NÃO bloqueia rotas de categories/products
+NÃO interfere no middleware global
+6. GARANTIR QUE NÃO HÁ BLOQUEIO GLOBAL
+
+Verificar e remover qualquer middleware que:
+
+bloqueie todas as rotas
+exija token em endpoints públicos de criação (se não intencional)
+🚨 REGRAS CRÍTICAS
+NÃO quebrar frontend
+NÃO alterar UI
+NÃO remover funcionalidades existentes
+NÃO inventar dados fake
+NÃO alterar schema do banco sem necessidade
+NÃO bloquear API globalmente
+🧪 DEBUG OBRIGATÓRIO
+
+Antes de finalizar, verificar:
+
+req.body chega nas rotas
+insert no banco está sendo executado
+resposta da API está retornando sucesso
+logs mostram fluxo completo
+🎯 RESULTADO FINAL ESPERADO
+
+Após correção:
+
+login fixo funcionando corretamente
+categorias sendo criadas e persistindo no Neon
+produtos sendo criados corretamente
+API estável e sem bloqueios
+sistema totalmente funcional em produção

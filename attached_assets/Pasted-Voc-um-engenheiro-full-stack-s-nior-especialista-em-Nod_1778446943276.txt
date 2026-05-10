@@ -1,0 +1,127 @@
+Você é um engenheiro full-stack sênior especialista em Node.js, TypeScript, Express, Drizzle ORM e PostgreSQL (Neon).
+
+O sistema atual é um cardápio digital com painel administrativo e autenticação de login. O sistema está parcialmente funcional, porém apresenta falhas críticas em autenticação e criação de categorias/produtos.
+
+⚠️ CONTEXTO DO PROJETO
+Backend: Node.js + TypeScript + Express
+ORM: Drizzle ORM
+Banco: PostgreSQL (Neon)
+Frontend separado consumindo API /api
+Estrutura modular com app.ts, routes, db, tables
+💥 PROBLEMAS A CORRIGIR
+🔴 1. LOGIN QUEBRADO (CRÍTICO)
+Usuário não consegue autenticar corretamente
+Possível problema em:
+validação de email/senha
+query no banco
+comparação de senha
+resposta da API
+token/session (se existir)
+🔴 2. CRIAÇÃO DE CATEGORIAS FALHANDO
+POST /categories não salva corretamente
+possível mismatch de payload
+possível erro no Drizzle insert
+🔴 3. CRIAÇÃO DE PRODUTOS FALHANDO
+POST /products não persiste no banco
+categoryId pode estar incorreto
+possível erro de schema vs frontend
+🔴 4. POSSÍVEL DESALINHAMENTO DE ROTAS
+backend usa prefixo /api
+frontend pode estar chamando rotas sem /api
+🔴 5. POSSÍVEL ERRO DE DRIZZLE ORM
+uso incorreto de insert
+uso de snake_case vs camelCase
+incompatibilidade com schema
+🎯 OBJETIVO FINAL
+
+Corrigir completamente:
+
+Login funcional e seguro
+Criação de categorias funcionando 100%
+Criação de produtos funcionando 100%
+Integração frontend → backend → Neon estável
+Sem erros silenciosos
+Logs claros de debug
+🔧 REGRAS TÉCNICAS OBRIGATÓRIAS
+1. LOGIN
+Corrigir endpoint de autenticação
+Garantir validação correta de email e senha
+Corrigir query no banco
+Garantir resposta consistente JSON
+Adicionar logs de debug no login
+2. CATEGORIAS E PRODUTOS
+Usar exclusivamente Drizzle ORM:
+db.insert(table).values()
+NÃO usar SQL manual inconsistente
+Garantir alinhamento com schema:
+categoryId (camelCase)
+imageUrl (camelCase)
+Validar campos obrigatórios
+3. VALIDAÇÃO
+Retornar erro 400 para campos inválidos
+Validar:
+name obrigatório
+price válido
+categoryId obrigatório em products
+4. ERROR HANDLING
+try/catch em TODAS as rotas
+console.error detalhado
+resposta padrão:
+{ "error": "mensagem clara" }
+5. LOGS DE DEBUG (OBRIGATÓRIO TEMPORÁRIO)
+
+Adicionar logs em:
+
+req.body recebido
+antes do insert
+depois do insert
+erros completos
+6. NEON DATABASE
+garantir compatibilidade total com PostgreSQL
+não alterar schema sem necessidade
+manter integridade referencial (categoryId)
+7. FRONTEND COMPATIBILITY
+
+API deve esperar:
+
+LOGIN:
+{ "email": "string", "password": "string" }
+CATEGORY:
+{ "name": "string" }
+PRODUCT:
+{
+  "name": "string",
+  "price": number,
+  "categoryId": number
+}
+🚨 REGRAS CRÍTICAS
+NÃO inventar dados fake
+NÃO remover funcionalidades existentes
+NÃO alterar UI do frontend
+NÃO quebrar rotas existentes
+Foco total em correção backend + integração
+📊 RELATÓRIO FINAL (OBRIGATÓRIO)
+
+Ao final do trabalho, gerar um relatório detalhado contendo:
+
+1. Bugs encontrados
+lista de todos os problemas detectados
+2. Correções feitas
+o que foi alterado no login
+o que foi alterado em categories
+o que foi alterado em products
+3. Status final
+login funcionando ou não
+criação de categorias funcionando ou não
+criação de produtos funcionando ou não
+4. Possíveis melhorias futuras
+sugestões técnicas de melhoria (opcional)
+🎯 RESULTADO ESPERADO
+
+Após execução:
+
+Login funcional e estável
+Categorias sendo criadas no Neon
+Produtos sendo criados corretamente
+API 100% consistente
+Sistema pronto para produção

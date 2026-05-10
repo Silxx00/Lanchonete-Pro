@@ -1,42 +1,35 @@
-import { Router } from "express";
-import { db } from "../db";
-import { productsTable } from "../db/products";
+import { pgTable, text, serial, timestamp, boolean, numeric, integer, index } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+import { categoriesTable } from "./categories";
 
-const router = Router();
+export const productsTable = pgTable(
+  "products",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+    imageUrl: text("image_url"),
+    categoryId: integer("category_id").references(() => categoriesTable.id),
+    stock: integer("stock").notNull().default(0),
+    active: boolean("active").notNull().default(true),
+    featured: boolean("featured").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("products_active_idx").on(table.active),
+    index("products_category_id_idx").on(table.categoryId),
+    index("products_name_idx").on(table.name),
+    index("products_featured_idx").on(table.featured),
+  ]
+);
 
-// CRIAR PRODUTO
-router.post("/products", async (req, res) => {
-  const {
-    name,
-    description,
-    price,
-    imageUrl,
-    categoryId,
-    stock,
-    active,
-    featured,
-  } = req.body;
-
-  try {
-    const result = await db
-      .insert(productsTable)
-      .values({
-        name,
-        description: description ?? null,
-        price,
-        imageUrl: imageUrl ?? null,
-        categoryId,
-        stock: stock ?? 0,
-        active: active ?? true,
-        featured: featured ?? false,
-      })
-      .returning();
-
-    return res.json(result[0]);
-  } catch (err: any) {
-    console.error("ERRO CREATE PRODUCT:", err);
-    return res.status(500).json({ error: err.message });
-  }
+export const insertProductSchema = createInsertSchema(productsTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
-
-export default router;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof productsTable.$inferSelect;

@@ -1,29 +1,21 @@
-import { Router } from "express";
-import { db } from "../db";
-import { categoriesTable } from "../db/categories";
+import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
 
-const router = Router();
-
-// CRIAR CATEGORIA
-router.post("/categories", async (req, res) => {
-  const { name, description, imageUrl, active } = req.body;
-
-  try {
-    const result = await db
-      .insert(categoriesTable)
-      .values({
-        name,
-        description: description ?? null,
-        imageUrl: imageUrl ?? null,
-        active: active ?? true,
-      })
-      .returning();
-
-    return res.json(result[0]);
-  } catch (err: any) {
-    console.error("ERRO CREATE CATEGORY:", err);
-    return res.status(500).json({ error: err.message });
-  }
+export const categoriesTable = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
-export default router;
+export const insertCategorySchema = createInsertSchema(categoriesTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categoriesTable.$inferSelect;

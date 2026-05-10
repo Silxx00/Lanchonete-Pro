@@ -9,8 +9,13 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("funcionario"),
   active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({

@@ -1,0 +1,86 @@
+Você é um engenheiro full-stack sênior responsável por corrigir o sistema de criação de categorias e produtos em um backend Node.js com TypeScript conectado ao PostgreSQL (Neon).
+
+⚠️ PROBLEMA ATUAL
+
+O sistema está falhando ao criar categorias e produtos.
+
+Sintomas:
+
+requisições retornam erro ou “falha ao criar”
+dados podem não estar chegando corretamente no backend
+possível problema de req.body, tipagem ou SQL
+🎯 OBJETIVO
+
+Fazer a criação de categorias e produtos funcionar 100%:
+
+dados chegando corretamente no backend
+salvando corretamente no Neon PostgreSQL
+sem erros silenciosos
+compatível com TypeScript
+🔧 AÇÕES OBRIGATÓRIAS
+1. GARANTIR PARSE DE JSON
+
+No servidor Express, confirmar:
+
+app.use(express.json()) está presente e corretamente configurado
+2. DEBUG DO REQUEST BODY
+
+Adicionar logs temporários:
+
+console.log("BODY RECEBIDO:", req.body)
+Garantir que os dados chegam corretamente do frontend
+
+Se req.body estiver undefined:
+
+corrigir middleware ou payload do frontend
+3. CORRIGIR TIPAGEM TYPESCRIPT
+
+Nas rotas de criação:
+
+tipar corretamente req.body
+evitar uso de campos implícitos
+
+Exemplo:
+
+const { name } = req.body as { name: string };
+4. CORRIGIR ROTAS DE CRIAÇÃO
+Categorias:
+POST /categories deve inserir no banco corretamente
+validar name antes de inserir
+usar query parametrizada
+Produtos:
+POST /products deve inserir:
+name
+price
+category_id
+validar todos os campos antes do INSERT
+5. CORRIGIR SQL (NEON POSTGRES)
+garantir compatibilidade com schema existente
+usar queries seguras com parâmetros ($1, $2, $3)
+evitar INSERT mal estruturado
+6. TRATAMENTO DE ERROS
+retornar erros claros no backend
+não esconder erros em try/catch
+logar erros no console
+7. NÃO ALTERAR FRONTEND
+não mudar UI do painel
+não mudar layout do cardápio
+apenas corrigir backend e integração
+🚨 REGRAS CRÍTICAS
+NÃO criar dados falsos
+NÃO mudar estrutura visual
+NÃO remover funcionalidades existentes
+NÃO quebrar integração com Neon
+apenas corrigir lógica de criação e tipagem
+🎯 RESULTADO FINAL ESPERADO
+
+Após correção:
+
+categorias são criadas com sucesso
+produtos são criados corretamente
+dados aparecem no Neon PostgreSQL
+frontend reflete os dados corretamente
+sem erros silenciosos
+🧠 IMPORTANTE
+
+Este sistema já está em produção, então as correções devem ser seguras e incrementais.

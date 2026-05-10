@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lt } from "drizzle-orm";
 import { db, usersTable, refreshTokensTable, loginAttemptsTable } from "../db";
-import { verifyPassword } from "../lib/password";
 import {
   signAccessToken,
   generateRefreshToken,
@@ -15,6 +14,23 @@ import { logger } from "../lib/logger";
 import { LoginBody, GetMeResponse, UpdateMeBody } from "../validation/api";
 
 const router: IRouter = Router();
+
+/* =========================
+   STATIC USERS (auth only)
+========================= */
+
+type StaticUserRole = "admin" | "gerente" | "funcionario";
+
+const STATIC_USERS: {
+  email: string;
+  password: string;
+  role: StaticUserRole;
+  name: string;
+}[] = [
+  { email: "admin@novaera.com", password: "admin123", role: "admin", name: "Admin" },
+  { email: "gerente@novaera.com", password: "gerente123", role: "gerente", name: "Gerente" },
+  { email: "funcionario@novaera.com", password: "func123", role: "funcionario", name: "Funcionário" },
+];
 
 const LOCKOUT_MAX_ATTEMPTS = 5;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
@@ -122,58 +138,39 @@ router.post(
       return;
     }
 
-    const [user] = await db
+    /* =========================
+     STATIC USER AUTH (no DB lookup for credentials)
+    ========================= */
+
+    const staticUser = STATIC_USERS.find((u) => u.email === normalizedEmail);
+
+    if (!staticUser || staticUser.password !== password) {
+      logger.debug({ email: normalizedEmail }, "Login inválido (usuário estático)");
+      await recordAttempt(normalizedEmail, ip, false);
+      res.status(401).json({ error: "Email ou senha inválidos" });
+      return;
+    }
+
+    /* Look up DB row by email to get the user ID for the refresh token FK.
+       The seed guarantees these rows exist; create if somehow missing. */
+    let [user] = await db
       .select()
       .from(usersTable)
       .where(eq(usersTable.email, normalizedEmail));
 
     if (!user) {
-      await recordAttempt(normalizedEmail, ip, false);
-      res.status(401).json({ error: "Email ou senha inválidos" });
-      return;
-    }
-
-    /* =========================
-     PASSWORD CHECK FIX
-     (SUPORTA password_hash OU passwordHash)
-  ========================= */
-
-    const passwordField = user.passwordHash;
-
-    if (!passwordField) {
-      logger.error({ user }, "Password field missing in DB");
-      res.status(500).json({ error: "Erro interno de autenticação" });
-      return;
-    }
-
-    let valid: boolean;
-
-    try {
-      valid = await verifyPassword(password, passwordField);
-    } catch (err) {
-      logger.error({ err }, "bcrypt error");
-      res.status(500).json({ error: "Erro interno de autenticação" });
-      return;
-    }
-
-    if (!valid) {
-      await recordAttempt(normalizedEmail, ip, false);
-      res.status(401).json({ error: "Email ou senha inválidos" });
-      return;
-    }
-
-    if (!user.active) {
-      await auditLog({
-        userId: user.id,
-        userEmail: user.email,
-        action: "login_blocked",
-        entity: "auth",
-        details: { reason: "inactive_user" },
-        req,
-      });
-
-      res.status(401).json({ error: "Usuário inativo" });
-      return;
+      const { hashPassword } = await import("../lib/password");
+      [user] = await db
+        .insert(usersTable)
+        .values({
+          name: staticUser.name,
+          email: staticUser.email,
+          passwordHash: await hashPassword(staticUser.password),
+          role: staticUser.role,
+          active: true,
+        })
+        .returning();
+      logger.info({ email: staticUser.email }, "Static user auto-created in DB");
     }
 
     await recordAttempt(normalizedEmail, ip, true);

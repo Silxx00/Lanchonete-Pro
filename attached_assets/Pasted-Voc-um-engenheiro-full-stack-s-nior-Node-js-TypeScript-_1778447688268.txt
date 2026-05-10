@@ -1,0 +1,98 @@
+Você é um engenheiro full-stack sênior (Node.js, TypeScript, Express, JWT).
+
+O sistema de login deve ser modificado para funcionar com usuários fixos pré-definidos, ignorando qualquer outro usuário do banco.
+
+🎯 OBJETIVO
+
+Somente estes usuários podem logar no sistema:
+
+👑 ADMIN
+email: admin@novaera.com
+senha: admin123
+role: admin
+🧑‍💼 GERENTE
+email: gerente@novaera.com
+senha: gerente123
+role: gerente
+👷 FUNCIONÁRIO
+email: funcionario@novaera.com
+senha: func123
+role: funcionario
+⚠️ REGRAS IMPORTANTES
+❌ IGNORAR BANCO DE DADOS PARA LOGIN
+NÃO consultar tabela users para autenticação
+login deve ser 100% baseado nesses 3 usuários fixos
+❌ NÃO aceitar outros emails
+qualquer outro login deve ser bloqueado
+❌ NÃO mudar frontend
+❌ NÃO quebrar JWT existente
+🔧 IMPLEMENTAÇÃO OBRIGATÓRIA
+🔹 Criar lista fixa no backend
+const users = [
+  {
+    email: "admin@novaera.com",
+    password: "admin123",
+    role: "admin",
+  },
+  {
+    email: "gerente@novaera.com",
+    password: "gerente123",
+    role: "gerente",
+  },
+  {
+    email: "funcionario@novaera.com",
+    password: "func123",
+    role: "funcionario",
+  },
+];
+🔹 Lógica de login
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = users.find((u) => u.email === email);
+
+  if (!user || user.password !== password) {
+    return res.status(401).json({ error: "Credenciais inválidas" });
+  }
+
+  const token = jwt.sign(
+    {
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET!,
+    { expiresIn: "1d" }
+  );
+
+  return res.json({
+    token,
+    user: {
+      email: user.email,
+      role: user.role,
+    },
+  });
+});
+🔐 COMPORTAMENTO ESPERADO
+✔ LOGIN VÁLIDO
+admin@novaera.com
+ → admin123
+gerente@novaera.com
+ → gerente123
+funcionario@novaera.com
+ → func123
+❌ LOGIN INVÁLIDO
+qualquer outro email → erro 401
+senha errada → erro 401
+🚨 REGRAS DE SEGURANÇA
+validar email + senha no backend
+não expor lista de usuários no frontend
+manter JWT ativo
+manter roles funcionando
+🎯 RESULTADO FINAL
+
+Após implementação:
+
+login funciona apenas com 3 contas fixas
+roles admin/gerente/funcionario funcionam
+banco de dados não interfere no login
+sistema mais controlado e seguro

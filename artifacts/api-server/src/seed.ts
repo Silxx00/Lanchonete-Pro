@@ -12,21 +12,21 @@ const SEED_USERS: {
   role: Role;
 }[] = [
   {
-    name: "Administrador",
-    email: "admin@lanchonete.com",
-    password: "123456",
+    name: "Admin",
+    email: "admin@novaera.com",
+    password: "admin123",
     role: "admin",
   },
   {
     name: "Gerente",
-    email: "gerente@lanchonete.com",
-    password: "123456",
+    email: "gerente@novaera.com",
+    password: "gerente123",
     role: "gerente",
   },
   {
-    name: "Funcionario",
-    email: "funcionario@lanchonete.com",
-    password: "123456",
+    name: "Funcionário",
+    email: "funcionario@novaera.com",
+    password: "func123",
     role: "funcionario",
   },
 ];
@@ -41,18 +41,16 @@ export async function seedDefaultUsers(): Promise<void> {
 
       if (existing.length > 0) continue;
 
-      // 🔥 GERA HASH DE FORMA SEGURA
-      const password_hash = await hashPassword(user.password);
+      const passwordHash = await hashPassword(user.password);
 
-      if (!password_hash) {
+      if (!passwordHash) {
         throw new Error(`Falha ao gerar hash para ${user.email}`);
       }
 
-      // 🔥 INSERT CORRETO (ALINHADO COM NEON)
       await db.insert(usersTable).values({
         name: user.name,
         email: user.email,
-        passwordHash: password_hash,
+        passwordHash,
         role: user.role,
         active: true,
       });

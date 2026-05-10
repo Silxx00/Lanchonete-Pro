@@ -36,25 +36,19 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  manager: "Gerente",
-  employee: "Funcionário",
   gerente: "Gerente",
   funcionario: "Funcionário",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "border-blue-500/30 text-blue-400",
-  manager: "border-indigo-500/30 text-indigo-400",
   gerente: "border-indigo-500/30 text-indigo-400",
-  employee: "border-cyan-500/30 text-cyan-400",
   funcionario: "border-cyan-500/30 text-cyan-400",
 };
 
 const ROLE_ICONS: Record<string, typeof ShieldCheck> = {
   admin: ShieldCheck,
-  manager: UserCog,
   gerente: UserCog,
-  employee: User,
   funcionario: User,
 };
 

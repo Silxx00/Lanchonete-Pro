@@ -1,0 +1,114 @@
+# users.ts — Seed correto para admin, gerente e funcionario
+
+```ts
+import bcrypt from "bcryptjs";
+import { db, usersTable } from "../db";
+import { eq } from "drizzle-orm";
+
+const DEFAULT_PASSWORD = "123456";
+
+async function createUserIfNotExists({
+  name,
+  email,
+  role,
+}: {
+  name: string;
+  email: string;
+  role: "admin" | "gerente" | "funcionario";
+}) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const [existingUser] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, normalizedEmail));
+
+  if (existingUser) {
+    console.log(`Usuário já existe: ${normalizedEmail}`);
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+  await db.insert(usersTable).values({
+    name,
+    email: normalizedEmail,
+    role,
+    passwordHash,
+    active: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  console.log(`Usuário criado: ${normalizedEmail}`);
+}
+
+export async function seedUsers() {
+  await createUserIfNotExists({
+    name: "Administrador",
+    email: "admin@lanchonete.com",
+    role: "admin",
+  });
+
+  await createUserIfNotExists({
+    name: "Gerente",
+    email: "gerente@lanchonete.com",
+    role: "gerente",
+  });
+
+  await createUserIfNotExists({
+    name: "Funcionario",
+    email: "funcionario@lanchonete.com",
+    role: "funcionario",
+  });
+}
+```
+
+# IMPORTANTE
+
+No arquivo principal do servidor (index.ts/server.ts/app.ts), adicionar:
+
+```ts
+import { seedUsers } from "./seed/users";
+
+await seedUsers();
+```
+
+Isso deve rodar APÓS conectar no banco.
+
+# LOGINS
+
+Admin:
+
+* email: [admin@lanchonete.com](mailto:admin@lanchonete.com)
+* senha: 123456
+
+Gerente:
+
+* email: [gerente@lanchonete.com](mailto:gerente@lanchonete.com)
+* senha: 123456
+
+Funcionário:
+
+* email: [funcionario@lanchonete.com](mailto:funcionario@lanchonete.com)
+* senha: 123456
+
+# IMPORTANTE 2
+
+Na tabela users do Neon precisa existir:
+
+* password_hash ou passwordHash
+* role
+* active
+
+Se o schema estiver usando password_hash mas o código usa passwordHash:
+
+corrigir no drizzle schema.
+
+Exemplo correto:
+
+```ts
+passwordHash: text("password_hash").notNull(),
+```
+
+Isso faz o TypeScript usar user.passwordHash mas salva no banco como password_hash.

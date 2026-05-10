@@ -51,14 +51,14 @@ function ProtectedRoute({
   minRole,
 }: {
   component: React.ComponentType;
-  minRole?: "admin" | "manager" | "employee";
+  minRole?: "admin" | "gerente" | "funcionario";
 }) {
   const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) return <Redirect to="/login" />;
 
   if (minRole && user) {
-    const levels: Record<string, number> = { admin: 3, manager: 2, employee: 1 };
+    const levels: Record<string, number> = { admin: 3, gerente: 2, funcionario: 1 };
     const userLevel = levels[user.role] ?? 0;
     const required = levels[minRole] ?? 0;
     if (userLevel < required) {
@@ -120,10 +120,10 @@ function AnimatedRoutes() {
             <ProtectedRoute component={OrdersPage} />
           </Route>
           <Route path="/promotions">
-            <ProtectedRoute component={PromotionsPage} minRole="manager" />
+            <ProtectedRoute component={PromotionsPage} minRole="gerente" />
           </Route>
           <Route path="/financeiro">
-            <ProtectedRoute component={FinancialPage} minRole="manager" />
+            <ProtectedRoute component={FinancialPage} minRole="gerente" />
           </Route>
           <Route path="/users">
             <ProtectedRoute component={UsersPage} minRole="admin" />

@@ -17,8 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  manager: "Gerente",
-  employee: "Funcionário",
+  gerente: "Gerente",
+  funcionario: "Funcionário",
 };
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
@@ -52,7 +52,7 @@ export const TopBar = memo(function TopBar({ setMobileOpen }: { setMobileOpen: (
 
   const displayName = user?.name || tokenUser?.email || "Admin";
   const displayEmail = user?.email || tokenUser?.email || "";
-  const displayRole = user?.role || tokenUser?.role || "employee";
+  const displayRole = user?.role || tokenUser?.role || "funcionario";
   const initials = displayName
     .split(" ")
     .slice(0, 2)

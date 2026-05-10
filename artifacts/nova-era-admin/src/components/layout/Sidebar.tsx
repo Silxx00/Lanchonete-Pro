@@ -29,24 +29,24 @@ const navItems = [
   { name: "Usuários",    href: "/users",        icon: Users,           minLevel: 3 },
 ];
 
-const ROLE_LEVELS: Record<string, number> = { admin: 3, manager: 2, employee: 1 };
+const ROLE_LEVELS: Record<string, number> = { admin: 3, gerente: 2, funcionario: 1 };
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  manager: "Gerente",
-  employee: "Funcionário",
+  gerente: "Gerente",
+  funcionario: "Funcionário",
 };
 
 const ROLE_ICONS: Record<string, typeof ShieldCheck> = {
   admin: ShieldCheck,
-  manager: UserCog,
-  employee: User,
+  gerente: UserCog,
+  funcionario: User,
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  admin:    "text-blue-400",
-  manager:  "text-indigo-400",
-  employee: "text-cyan-400",
+  admin:      "text-blue-400",
+  gerente:    "text-indigo-400",
+  funcionario: "text-cyan-400",
 };
 
 export const Sidebar = memo(function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (o: boolean) => void }) {

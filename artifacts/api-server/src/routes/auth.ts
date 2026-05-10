@@ -138,8 +138,7 @@ router.post(
      (SUPORTA password_hash OU passwordHash)
   ========================= */
 
-    const passwordField =
-      (user as any).password_hash ?? (user as any).passwordHash;
+    const passwordField = user.passwordHash;
 
     if (!passwordField) {
       logger.error({ user }, "Password field missing in DB");
@@ -323,10 +322,15 @@ router.patch(
 
     if (newPassword) {
       if (!currentPassword) {
-        res.status(400).json({ error: "Senha atual é obrigatória para alterar a senha" });
+        res
+          .status(400)
+          .json({ error: "Senha atual é obrigatória para alterar a senha" });
         return;
       }
-      const valid = await verifyPassword(currentPassword, existing.passwordHash);
+      const valid = await verifyPassword(
+        currentPassword,
+        existing.passwordHash,
+      );
       if (!valid) {
         res.status(400).json({ error: "Senha atual incorreta" });
         return;

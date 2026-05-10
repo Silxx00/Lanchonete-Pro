@@ -35,7 +35,7 @@ export function requireRole(...roles: string[]) {
 }
 
 export function requireAdminOrManager(req: AuthRequest, res: Response, next: NextFunction): void {
-  requireRole("admin", "manager")(req, res, next);
+  requireRole("admin", "gerente")(req, res, next);
 }
 
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void {

@@ -56,7 +56,7 @@ const userSchema = z.object({
   name: z.string().min(2, "Nome é obrigatório"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter ao menos 6 caracteres").optional().or(z.literal("")),
-  role: z.enum(["admin", "manager", "employee"]),
+  role: z.enum(["admin", "gerente", "funcionario"]),
   active: z.boolean().default(true),
 });
 
@@ -64,14 +64,14 @@ type UserFormValues = z.infer<typeof userSchema>;
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  manager: "Gerente",
-  employee: "Funcionário",
+  gerente: "Gerente",
+  funcionario: "Funcionário",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "border-primary/40 text-primary",
-  manager: "border-blue-400/40 text-blue-400",
-  employee: "border-muted-foreground/40 text-muted-foreground",
+  gerente: "border-blue-400/40 text-blue-400",
+  funcionario: "border-muted-foreground/40 text-muted-foreground",
 };
 
 export default function UsersPage() {
@@ -89,7 +89,7 @@ export default function UsersPage() {
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
-    defaultValues: { name: "", email: "", password: "", role: "employee", active: true },
+    defaultValues: { name: "", email: "", password: "", role: "funcionario", active: true },
   });
 
   if (currentUser && currentUser.role !== "admin") {
@@ -110,13 +110,13 @@ export default function UsersPage() {
 
   const openCreateModal = () => {
     setEditingUser(null);
-    form.reset({ name: "", email: "", password: "", role: "employee", active: true });
+    form.reset({ name: "", email: "", password: "", role: "funcionario", active: true });
     setIsModalOpen(true);
   };
 
   const openEditModal = (user: User) => {
     setEditingUser(user);
-    form.reset({ name: user.name, email: user.email, password: "", role: user.role as "admin" | "manager" | "employee", active: user.active });
+    form.reset({ name: user.name, email: user.email, password: "", role: user.role as "admin" | "gerente" | "funcionario", active: user.active });
     setIsModalOpen(true);
   };
 
@@ -333,8 +333,8 @@ export default function UsersPage() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="employee">Funcionário — acesso básico (pedidos)</SelectItem>
-                      <SelectItem value="manager">Gerente — gerencia cardápio e pedidos</SelectItem>
+                      <SelectItem value="funcionario">Funcionário — acesso básico (pedidos)</SelectItem>
+                      <SelectItem value="gerente">Gerente — gerencia cardápio e pedidos</SelectItem>
                       <SelectItem value="admin">Administrador — acesso total</SelectItem>
                     </SelectContent>
                   </Select>

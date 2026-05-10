@@ -12,21 +12,21 @@ const SEED_USERS: {
   role: Role;
 }[] = [
   {
-    name: "Admin",
-    email: "admin@novaera.com",
-    password: "admin123",
+    name: "Administrador",
+    email: "admin@lanchonete.com",
+    password: "123456",
     role: "admin",
   },
   {
     name: "Gerente",
-    email: "gerente@novaera.com",
-    password: "gerente123",
+    email: "gerente@lanchonete.com",
+    password: "123456",
     role: "gerente",
   },
   {
     name: "Funcionario",
-    email: "funcionario@novaera.com",
-    password: "func123",
+    email: "funcionario@lanchonete.com",
+    password: "123456",
     role: "funcionario",
   },
 ];

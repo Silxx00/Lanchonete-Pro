@@ -12,7 +12,7 @@ import { auditLog } from "../lib/audit";
 import { loginRateLimiter } from "../middleware/rateLimiter";
 import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { logger } from "../lib/logger";
-import { LoginBody, GetMeResponse } from "../validation/api";
+import { LoginBody, GetMeResponse, UpdateMeBody } from "../validation/api";
 
 const router: IRouter = Router();
 
@@ -296,6 +296,58 @@ router.get(
     }
 
     res.json(GetMeResponse.parse(toUserDto(user)));
+  },
+);
+
+router.patch(
+  "/auth/me",
+  requireAuth,
+  async (req: AuthRequest, res): Promise<void> => {
+    const parsed = UpdateMeBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Dados inválidos" });
+      return;
+    }
+
+    const { name, email, currentPassword, newPassword } = parsed.data;
+
+    const [existing] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, req.user!.sub));
+
+    if (!existing) {
+      res.status(404).json({ error: "Usuário não encontrado" });
+      return;
+    }
+
+    if (newPassword) {
+      if (!currentPassword) {
+        res.status(400).json({ error: "Senha atual é obrigatória para alterar a senha" });
+        return;
+      }
+      const valid = await verifyPassword(currentPassword, existing.passwordHash);
+      if (!valid) {
+        res.status(400).json({ error: "Senha atual incorreta" });
+        return;
+      }
+    }
+
+    const updateData: Partial<typeof usersTable.$inferInsert> = {};
+    if (name != null) updateData.name = name;
+    if (email != null) updateData.email = email;
+    if (newPassword) {
+      const { hashPassword } = await import("../lib/password");
+      updateData.passwordHash = await hashPassword(newPassword);
+    }
+
+    const [updated] = await db
+      .update(usersTable)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(usersTable.id, req.user!.sub))
+      .returning();
+
+    res.json(GetMeResponse.parse(toUserDto(updated)));
   },
 );
 

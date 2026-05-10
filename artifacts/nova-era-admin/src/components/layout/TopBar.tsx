@@ -28,6 +28,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   "/categories": { title: "Categorias",  subtitle: "Organização do cardápio" },
   "/promotions": { title: "Promoções",   subtitle: "Ofertas e descontos ativos" },
   "/users":      { title: "Usuários",    subtitle: "Controle de acesso ao sistema" },
+  "/profile":    { title: "Meu Perfil",  subtitle: "Configurações da sua conta" },
 };
 
 export const TopBar = memo(function TopBar({ setMobileOpen }: { setMobileOpen: (o: boolean) => void }) {
@@ -117,7 +118,10 @@ export const TopBar = memo(function TopBar({ setMobileOpen }: { setMobileOpen: (
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-sm gap-2.5">
+            <DropdownMenuItem
+              onClick={() => setLocation("/profile")}
+              className="cursor-pointer text-sm gap-2.5"
+            >
               <UserIcon className="h-4 w-4 text-muted-foreground" />
               <span>Meu perfil</span>
             </DropdownMenuItem>

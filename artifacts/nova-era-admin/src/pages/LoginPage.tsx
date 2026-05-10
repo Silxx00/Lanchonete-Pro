@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Loader2, Lock, Zap } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -19,12 +19,6 @@ const loginSchema = z.object({
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
-
-const QUICK_ACCESS = [
-  { label: "Admin", email: "admin@novaera.com", password: "admin123", color: "text-blue-400 border-blue-500/30 hover:bg-blue-500/10" },
-  { label: "Gerente", email: "gerente@novaera.com", password: "gerente123", color: "text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10" },
-  { label: "Funcionário", email: "funcionario@novaera.com", password: "func123", color: "text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10" },
-];
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
@@ -52,11 +46,6 @@ export default function LoginPage() {
         toast.error(msg || "E-mail ou senha inválidos");
       },
     });
-  };
-
-  const fillCredentials = (email: string, password: string) => {
-    form.setValue("email", email);
-    form.setValue("password", password);
   };
 
   return (
@@ -141,25 +130,6 @@ export default function LoginPage() {
             </form>
           </Form>
 
-          <div className="mt-6 pt-5 border-t border-border">
-            <div className="flex items-center gap-1.5 mb-3">
-              <Zap className="h-3 w-3 text-primary" />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Acesso rápido</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {QUICK_ACCESS.map((a) => (
-                <button
-                  key={a.label}
-                  type="button"
-                  onClick={() => fillCredentials(a.email, a.password)}
-                  className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${a.color}`}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">Clique para preencher as credenciais</p>
-          </div>
         </div>
 
         <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-muted-foreground/50">

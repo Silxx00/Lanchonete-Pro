@@ -45,6 +45,13 @@ export const GetMeResponse = zod.object({
   updatedAt: zod.string(),
 });
 
+export const UpdateMeBody = zod.object({
+  name: zod.string().min(1).optional(),
+  email: zod.string().email().optional(),
+  currentPassword: zod.string().optional(),
+  newPassword: zod.string().min(6).optional(),
+});
+
 export const ListUsersResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),

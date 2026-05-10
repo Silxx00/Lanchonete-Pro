@@ -1,0 +1,70 @@
+Você é um engenheiro full-stack responsável por corrigir o sistema de criação de categorias e produtos conectado ao banco PostgreSQL (Neon).
+
+⚠️ PROBLEMA ATUAL
+
+O sistema está com falhas na criação de:
+
+categorias
+produtos
+
+Eles não estão sendo salvos corretamente no banco de dados.
+
+🎯 OBJETIVO
+
+Garantir que a criação de categorias e produtos funcione 100% com o banco Neon PostgreSQL, sem quebrar outras partes do sistema.
+
+🔧 AÇÕES OBRIGATÓRIAS
+1. CORRIGIR RECEBIMENTO DE DADOS NO BACKEND
+Garantir que o servidor Express esteja usando:
+express.json()
+Validar que req.body está sendo recebido corretamente
+Adicionar logs temporários para debug (sem expor dados sensíveis)
+2. CORRIGIR ROTAS DE CRIAÇÃO
+Produtos:
+Verificar rota POST de criação de produto
+Garantir que os dados estão sendo inseridos corretamente no banco
+Usar query parametrizada (sem SQL injection)
+Campos esperados:
+name
+price
+category_id (ou category)
+Categorias:
+Verificar rota POST de criação de categoria
+Garantir INSERT correto no banco
+Campo esperado:
+name
+3. VALIDAR BANCO DE DADOS (NEON POSTGRES)
+Garantir que as tabelas existem:
+products
+categories
+Se necessário, ajustar queries para o schema correto existente
+Não criar dados fake ou duplicados
+4. GARANTIR RELAÇÃO ENTRE TABELAS
+Se products depende de categories:
+garantir category_id correto
+validar integridade referencial
+5. CORRIGIR ERROS SILENCIOSOS
+Se houver erro no INSERT, retornar erro claro no console
+Não deixar falha silenciosa
+6. NÃO ALTERAR FRONTEND VISUAL
+Não modificar layout do cardápio
+Não mudar UI do painel
+Apenas corrigir lógica de backend e banco
+🚨 REGRAS CRÍTICAS
+NÃO criar dados falsos
+NÃO alterar estrutura visual do sistema
+NÃO remover funcionalidades existentes
+NÃO quebrar integração com Neon
+Apenas corrigir CRUD e conexão com banco
+🎯 RESULTADO FINAL ESPERADO
+
+Após correção:
+
+categorias são criadas e aparecem no banco
+produtos são criados corretamente
+ambos aparecem no cardápio após reload
+sem erros no backend
+integração estável com Neon PostgreSQL
+🧠 IMPORTANTE
+
+Este sistema já está em produção, então qualquer ajuste deve ser seguro e incremental.

@@ -124,7 +124,7 @@ export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem);
 export const CreateCategoryBody = zod.object({
   name: zod.string().min(1, "Nome é obrigatório").trim(),
   description: zod.string().nullish(),
-  imageUrl: zod.string().url("URL da imagem inválida").nullish(),
+  imageUrl: zod.string().nullish(),
   active: zod.boolean().optional(),
 });
 

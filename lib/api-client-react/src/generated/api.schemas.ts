@@ -111,6 +111,10 @@ export interface Product {
   stock: number;
   active: boolean;
   featured: boolean;
+  /** @nullable */
+  prepTime?: number | null;
+  /** @nullable */
+  internalNotes?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -127,6 +131,10 @@ export interface CreateProductBody {
   stock: number;
   active?: boolean;
   featured?: boolean;
+  /** @nullable */
+  prepTime?: number | null;
+  /** @nullable */
+  internalNotes?: string | null;
 }
 
 export interface UpdateProductBody {
@@ -146,6 +154,34 @@ export interface UpdateProductBody {
   active?: boolean | null;
   /** @nullable */
   featured?: boolean | null;
+  /** @nullable */
+  prepTime?: number | null;
+  /** @nullable */
+  internalNotes?: string | null;
+}
+
+export interface ProductExtra {
+  id: number;
+  productId: number;
+  name: string;
+  price: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductIngredient {
+  id: number;
+  productId: number;
+  name: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface OrderItemExtra {
+  id: number;
+  name: string;
+  price: number;
 }
 
 export interface OrderItem {
@@ -156,6 +192,10 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  extras?: OrderItemExtra[];
+  removedIngredients?: string[];
+  /** @nullable */
+  itemNotes?: string | null;
 }
 
 export interface Order {
@@ -176,6 +216,10 @@ export interface CreateOrderItemBody {
   productId: number;
   quantity: number;
   unitPrice: number;
+  extras?: { id: number; name: string; price: number }[];
+  removedIngredients?: string[];
+  /** @nullable */
+  itemNotes?: string | null;
 }
 
 export interface CreateOrderBody {

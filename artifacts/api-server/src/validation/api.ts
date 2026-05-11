@@ -184,6 +184,8 @@ export const ListProductsResponseItem = zod.object({
   stock: zod.number(),
   active: zod.boolean(),
   featured: zod.boolean(),
+  prepTime: zod.number().nullish(),
+  internalNotes: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -198,6 +200,8 @@ export const CreateProductBody = zod.object({
   stock: zod.number(),
   active: zod.boolean().optional(),
   featured: zod.boolean().optional(),
+  prepTime: zod.number().int().min(0).nullish(),
+  internalNotes: zod.string().nullish(),
 });
 
 export const GetProductParams = zod.object({
@@ -215,6 +219,8 @@ export const GetProductResponse = zod.object({
   stock: zod.number(),
   active: zod.boolean(),
   featured: zod.boolean(),
+  prepTime: zod.number().nullish(),
+  internalNotes: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -232,6 +238,8 @@ export const UpdateProductBody = zod.object({
   stock: zod.number().nullish(),
   active: zod.boolean().nullish(),
   featured: zod.boolean().nullish(),
+  prepTime: zod.number().int().min(0).nullish(),
+  internalNotes: zod.string().nullish(),
 });
 
 export const UpdateProductResponse = zod.object({
@@ -245,12 +253,29 @@ export const UpdateProductResponse = zod.object({
   stock: zod.number(),
   active: zod.boolean(),
   featured: zod.boolean(),
+  prepTime: zod.number().nullish(),
+  internalNotes: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
 
 export const DeleteProductParams = zod.object({
   id: zod.coerce.number(),
+});
+
+// ── Shared order item sub-schema ──────────────────────────────────────────────
+
+const OrderItemSchema = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  productId: zod.number(),
+  productName: zod.string(),
+  quantity: zod.number(),
+  unitPrice: zod.number(),
+  totalPrice: zod.number(),
+  extras: zod.array(zod.object({ name: zod.string(), price: zod.number() })).nullish(),
+  removedIngredients: zod.array(zod.string()).nullish(),
+  itemNotes: zod.string().nullish(),
 });
 
 export const ListOrdersQueryParams = zod.object({
@@ -265,17 +290,7 @@ export const ListOrdersResponseItem = zod.object({
   status: zod.string(),
   total: zod.number(),
   notes: zod.string().nullish(),
-  items: zod.array(
-    zod.object({
-      id: zod.number(),
-      orderId: zod.number(),
-      productId: zod.number(),
-      productName: zod.string(),
-      quantity: zod.number(),
-      unitPrice: zod.number(),
-      totalPrice: zod.number(),
-    }),
-  ),
+  items: zod.array(OrderItemSchema),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -290,6 +305,9 @@ export const CreateOrderBody = zod.object({
       productId: zod.number(),
       quantity: zod.number(),
       unitPrice: zod.number(),
+      extras: zod.array(zod.object({ name: zod.string(), price: zod.number() })).optional(),
+      removedIngredients: zod.array(zod.string()).optional(),
+      itemNotes: zod.string().nullish(),
     }),
   ),
 });
@@ -305,17 +323,7 @@ export const GetOrderResponse = zod.object({
   status: zod.string(),
   total: zod.number(),
   notes: zod.string().nullish(),
-  items: zod.array(
-    zod.object({
-      id: zod.number(),
-      orderId: zod.number(),
-      productId: zod.number(),
-      productName: zod.string(),
-      quantity: zod.number(),
-      unitPrice: zod.number(),
-      totalPrice: zod.number(),
-    }),
-  ),
+  items: zod.array(OrderItemSchema),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -336,17 +344,7 @@ export const UpdateOrderResponse = zod.object({
   status: zod.string(),
   total: zod.number(),
   notes: zod.string().nullish(),
-  items: zod.array(
-    zod.object({
-      id: zod.number(),
-      orderId: zod.number(),
-      productId: zod.number(),
-      productName: zod.string(),
-      quantity: zod.number(),
-      unitPrice: zod.number(),
-      totalPrice: zod.number(),
-    }),
-  ),
+  items: zod.array(OrderItemSchema),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -479,18 +477,52 @@ export const GetRecentOrdersResponseItem = zod.object({
   status: zod.string(),
   total: zod.number(),
   notes: zod.string().nullish(),
-  items: zod.array(
-    zod.object({
-      id: zod.number(),
-      orderId: zod.number(),
-      productId: zod.number(),
-      productName: zod.string(),
-      quantity: zod.number(),
-      unitPrice: zod.number(),
-      totalPrice: zod.number(),
-    }),
-  ),
+  items: zod.array(OrderItemSchema),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
 export const GetRecentOrdersResponse = zod.array(GetRecentOrdersResponseItem);
+
+// ── Product extras & ingredients ─────────────────────────────────────────────
+
+export const ProductExtraSchema = zod.object({
+  id: zod.number(),
+  productId: zod.number(),
+  name: zod.string(),
+  price: zod.number(),
+  active: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListProductExtrasResponse = zod.array(ProductExtraSchema);
+
+export const CreateProductExtraBody = zod.object({
+  name: zod.string().min(1),
+  price: zod.number().min(0).default(0),
+  active: zod.boolean().optional(),
+});
+
+export const UpdateProductExtraBody = zod.object({
+  name: zod.string().min(1).nullish(),
+  price: zod.number().min(0).nullish(),
+  active: zod.boolean().nullish(),
+});
+
+export const ProductIngredientSchema = zod.object({
+  id: zod.number(),
+  productId: zod.number(),
+  name: zod.string(),
+  active: zod.boolean(),
+  createdAt: zod.string(),
+});
+export const ListProductIngredientsResponse = zod.array(ProductIngredientSchema);
+
+export const CreateProductIngredientBody = zod.object({
+  name: zod.string().min(1),
+  active: zod.boolean().optional(),
+});
+
+export const UpdateProductIngredientBody = zod.object({
+  name: zod.string().min(1).nullish(),
+  active: zod.boolean().nullish(),
+});

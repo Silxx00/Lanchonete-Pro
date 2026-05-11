@@ -44,6 +44,8 @@ function toProductDto(
     stock: p.stock,
     active: p.active,
     featured: p.featured,
+    prepTime: p.prepTime ?? null,
+    internalNotes: p.internalNotes ?? null,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   };
@@ -122,6 +124,8 @@ router.post("/products", requireAuth, requireAdminOrManager, async (req: AuthReq
           stock: parsed.data.stock ?? 0,
           active: parsed.data.active ?? true,
           featured: parsed.data.featured ?? false,
+          prepTime: parsed.data.prepTime ?? null,
+          internalNotes: normalizeString(parsed.data.internalNotes),
         })
         .returning(),
       categoryId != null
@@ -196,6 +200,8 @@ router.patch("/products/:id", requireAuth, requireAdminOrManager, async (req: Au
     if (parsed.data.stock != null) updateData.stock = parsed.data.stock;
     if (parsed.data.active != null) updateData.active = parsed.data.active;
     if (parsed.data.featured != null) updateData.featured = parsed.data.featured;
+    if (parsed.data.prepTime !== undefined) updateData.prepTime = parsed.data.prepTime ?? null;
+    if (parsed.data.internalNotes !== undefined) updateData.internalNotes = normalizeString(parsed.data.internalNotes);
 
     const [product] = await db
       .update(productsTable)

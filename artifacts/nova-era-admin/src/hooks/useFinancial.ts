@@ -46,6 +46,10 @@ export interface CashClosing {
   netProfit: number;
   orderCount: number;
   notes: string | null;
+  cashAmount: number | null;
+  pixAmount: number | null;
+  cardAmount: number | null;
+  countedTotal: number | null;
   createdAt: string;
 }
 
@@ -72,6 +76,9 @@ export interface CreateCashClosingInput {
   periodStart: string;
   periodEnd: string;
   notes?: string;
+  cashAmount?: number;
+  pixAmount?: number;
+  cardAmount?: number;
 }
 
 export function useFinancialSummary(year: number, month: number) {

@@ -31,6 +31,9 @@ const UpdateExpenseBody = z.object({
 const CreateCashClosingBody = z.object({
   periodStart: z.string(),
   periodEnd: z.string(),
+  cashAmount: z.number().min(0).nullish(),
+  pixAmount: z.number().min(0).nullish(),
+  cardAmount: z.number().min(0).nullish(),
   notes: z.string().nullish(),
 });
 
@@ -56,6 +59,10 @@ function fmtClosing(c: typeof cashClosingsTable.$inferSelect) {
     grossRevenue: parseFloat(c.grossRevenue),
     totalExpenses: parseFloat(c.totalExpenses),
     netProfit: parseFloat(c.netProfit),
+    cashAmount: c.cashAmount != null ? parseFloat(c.cashAmount) : null,
+    pixAmount: c.pixAmount != null ? parseFloat(c.pixAmount) : null,
+    cardAmount: c.cardAmount != null ? parseFloat(c.cardAmount) : null,
+    countedTotal: c.countedTotal != null ? parseFloat(c.countedTotal) : null,
     periodStart: c.periodStart.toISOString(),
     periodEnd: c.periodEnd.toISOString(),
     createdAt: c.createdAt.toISOString(),
@@ -258,12 +265,25 @@ router.post("/financial/cash-closings", requireAuth, requireAdminOrManager, asyn
     const netProfit = grossRevenue - totalExpenses;
     const orderCount = parseInt(cntRow[0]?.v ?? "0");
 
+    const cashAmount = parsed.data.cashAmount ?? null;
+    const pixAmount = parsed.data.pixAmount ?? null;
+    const cardAmount = parsed.data.cardAmount ?? null;
+    const countedTotal =
+      cashAmount != null || pixAmount != null || cardAmount != null
+        ? (cashAmount ?? 0) + (pixAmount ?? 0) + (cardAmount ?? 0)
+        : null;
+
     const [row] = await db.insert(cashClosingsTable).values({
       periodStart, periodEnd,
       grossRevenue: grossRevenue.toFixed(2),
       totalExpenses: totalExpenses.toFixed(2),
       netProfit: netProfit.toFixed(2),
-      orderCount, notes: parsed.data.notes ?? null,
+      orderCount,
+      cashAmount: cashAmount != null ? cashAmount.toFixed(2) : null,
+      pixAmount: pixAmount != null ? pixAmount.toFixed(2) : null,
+      cardAmount: cardAmount != null ? cardAmount.toFixed(2) : null,
+      countedTotal: countedTotal != null ? countedTotal.toFixed(2) : null,
+      notes: parsed.data.notes ?? null,
       closedBy: req.user?.sub ?? null,
     }).returning();
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, CheckCircle2, XCircle, Package } from "lucide-react";
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, CheckCircle2, XCircle, Package, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,6 +56,17 @@ import {
 
 import type { Product } from "@workspace/api-client-react";
 
+import {
+  useProductExtras,
+  useCreateProductExtra,
+  useDeleteProductExtra,
+} from "@/hooks/useProductExtras";
+import {
+  useProductIngredients,
+  useCreateProductIngredient,
+  useDeleteProductIngredient,
+} from "@/hooks/useProductIngredients";
+
 const productSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional().nullable(),
@@ -65,9 +76,175 @@ const productSchema = z.object({
   imageUrl: z.string().url("URL inválida").optional().nullable().or(z.literal("")),
   active: z.boolean().default(true),
   featured: z.boolean().default(false),
+  prepTime: z.coerce.number().min(0).optional().nullable(),
+  internalNotes: z.string().optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
+
+function ExtrasSection({ productId }: { productId: number }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+
+  const { data: extras, isLoading } = useProductExtras(productId);
+  const createExtra = useCreateProductExtra();
+  const deleteExtra = useDeleteProductExtra();
+
+  const handleAdd = () => {
+    const n = name.trim();
+    const p = parseFloat(price) || 0;
+    if (!n) { toast.error("Nome do adicional obrigatório"); return; }
+    createExtra.mutate(
+      { productId, name: n, price: p },
+      {
+        onSuccess: () => { setName(""); setPrice(""); toast.success("Adicional criado"); },
+        onError: () => toast.error("Erro ao criar adicional"),
+      }
+    );
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/10">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"
+      >
+        <span>Adicionais ({extras?.length ?? 0})</span>
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando...
+            </div>
+          ) : !extras?.length ? (
+            <p className="text-xs text-muted-foreground py-1">Nenhum adicional cadastrado.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {extras.map((ex) => (
+                <div key={ex.id} className="flex items-center justify-between py-1.5 px-2.5 bg-background/40 rounded-lg border border-border text-xs">
+                  <span className="font-medium text-foreground">{ex.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{ex.price > 0 ? formatCurrency(ex.price) : "Grátis"}</span>
+                    <button
+                      type="button"
+                      onClick={() => deleteExtra.mutate(
+                        { productId, extraId: ex.id },
+                        { onError: () => toast.error("Erro ao remover adicional") }
+                      )}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2 pt-1">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nome do adicional"
+              className="h-8 text-xs flex-1"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
+            />
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Preço"
+              className="h-8 text-xs w-24"
+            />
+            <Button type="button" size="sm" className="h-8 px-3 text-xs gap-1" onClick={handleAdd} disabled={createExtra.isPending}>
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IngredientsSection({ productId }: { productId: number }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+
+  const { data: ingredients, isLoading } = useProductIngredients(productId);
+  const createIngredient = useCreateProductIngredient();
+  const deleteIngredient = useDeleteProductIngredient();
+
+  const handleAdd = () => {
+    const n = name.trim();
+    if (!n) { toast.error("Nome do ingrediente obrigatório"); return; }
+    createIngredient.mutate(
+      { productId, name: n },
+      {
+        onSuccess: () => { setName(""); toast.success("Ingrediente adicionado"); },
+        onError: () => toast.error("Erro ao adicionar ingrediente"),
+      }
+    );
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/10">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"
+      >
+        <span>Ingredientes ({ingredients?.length ?? 0})</span>
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando...
+            </div>
+          ) : !ingredients?.length ? (
+            <p className="text-xs text-muted-foreground py-1">Nenhum ingrediente cadastrado.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {ingredients.map((ing) => (
+                <div key={ing.id} className="flex items-center gap-1 py-1 px-2.5 bg-background/40 rounded-full border border-border text-xs">
+                  <span className="font-medium text-foreground">{ing.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => deleteIngredient.mutate(
+                      { productId, ingredientId: ing.id },
+                      { onError: () => toast.error("Erro ao remover ingrediente") }
+                    )}
+                    className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
+                  >
+                    <XCircle className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2 pt-1">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nome do ingrediente (ex: Cebola)"
+              className="h-8 text-xs flex-1"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
+            />
+            <Button type="button" size="sm" className="h-8 px-3 text-xs gap-1" onClick={handleAdd} disabled={createIngredient.isPending}>
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
@@ -90,12 +267,12 @@ export default function ProductsPage() {
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: 0, categoryId: undefined, stock: 0, imageUrl: "", active: true, featured: false },
+    defaultValues: { name: "", description: "", price: 0, categoryId: undefined, stock: 0, imageUrl: "", active: true, featured: false, prepTime: undefined, internalNotes: "" },
   });
 
   const openCreateModal = useCallback(() => {
     setEditingProduct(null);
-    form.reset({ name: "", description: "", price: 0, categoryId: categories?.[0]?.id || undefined, stock: 0, imageUrl: "", active: true, featured: false });
+    form.reset({ name: "", description: "", price: 0, categoryId: categories?.[0]?.id || undefined, stock: 0, imageUrl: "", active: true, featured: false, prepTime: undefined, internalNotes: "" });
     setIsModalOpen(true);
   }, [form, categories]);
 
@@ -110,14 +287,21 @@ export default function ProductsPage() {
       imageUrl: product.imageUrl || "",
       active: product.active,
       featured: product.featured,
+      prepTime: product.prepTime ?? undefined,
+      internalNotes: product.internalNotes || "",
     });
     setIsModalOpen(true);
   }, [form]);
 
   const onSubmit = (values: ProductFormValues) => {
+    const payload = {
+      ...values,
+      prepTime: values.prepTime || undefined,
+      internalNotes: values.internalNotes || undefined,
+    };
     if (editingProduct) {
       updateMutation.mutate(
-        { id: editingProduct.id, data: values },
+        { id: editingProduct.id, data: payload },
         {
           onSuccess: () => {
             toast.success("Produto atualizado com sucesso");
@@ -129,7 +313,7 @@ export default function ProductsPage() {
       );
     } else {
       createMutation.mutate(
-        { data: values as any },
+        { data: payload as any },
         {
           onSuccess: () => {
             toast.success("Produto criado com sucesso");
@@ -274,6 +458,13 @@ export default function ProductsPage() {
                         </Badge>
                       )}
                     </div>
+                    {product.prepTime && (
+                      <div className="absolute bottom-2 left-2">
+                        <Badge variant="outline" className="bg-background/80 text-[10px] border-border text-muted-foreground">
+                          {product.prepTime} min
+                        </Badge>
+                      </div>
+                    )}
                   </div>
 
                   <CardContent className="p-4 flex-1 flex flex-col">
@@ -329,8 +520,8 @@ export default function ProductsPage() {
         onConfirm={handleDeleteConfirm}
       />
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[580px] bg-card border-border rounded-2xl">
+      <Dialog open={isModalOpen} onOpenChange={(open) => { if (!open) setIsModalOpen(false); }}>
+        <DialogContent className="sm:max-w-[600px] bg-card border-border rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">{editingProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle>
           </DialogHeader>
@@ -387,8 +578,18 @@ export default function ProductsPage() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                <FormField control={form.control} name="prepTime" render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs font-semibold">Tempo de Preparo (min)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" placeholder="Ex: 15" className="h-9 text-sm" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
                     <FormLabel className="text-xs font-semibold">URL da Imagem (opcional)</FormLabel>
                     <FormControl>
                       <Input placeholder="https://..." className="h-9 text-sm" {...field} value={field.value || ""} />
@@ -402,6 +603,16 @@ export default function ProductsPage() {
                     <FormLabel className="text-xs font-semibold">Descrição (opcional)</FormLabel>
                     <FormControl>
                       <Input placeholder="Descreva o produto..." className="h-9 text-sm" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="internalNotes" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="text-xs font-semibold">Notas Internas (opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Instruções para a equipe, alergênicos..." className="h-9 text-sm" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -431,6 +642,18 @@ export default function ProductsPage() {
                   </FormItem>
                 )} />
               </div>
+
+              {editingProduct && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">Cardápio</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  <ExtrasSection productId={editingProduct.id} />
+                  <IngredientsSection productId={editingProduct.id} />
+                </div>
+              )}
 
               <DialogFooter className="pt-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>

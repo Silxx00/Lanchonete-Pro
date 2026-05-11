@@ -17,6 +17,26 @@ import {
 
 const router: IRouter = Router();
 
+function safeJsonParse<T>(str: string | null | undefined): T | null {
+  if (!str) return null;
+  try { return JSON.parse(str) as T; } catch { return null; }
+}
+
+function toOrderItemDto(item: typeof orderItemsTable.$inferSelect) {
+  return {
+    id: item.id,
+    orderId: item.orderId,
+    productId: item.productId,
+    productName: item.productName,
+    quantity: item.quantity,
+    unitPrice: Number(item.unitPrice),
+    totalPrice: Number(item.totalPrice),
+    extras: safeJsonParse<Array<{ name: string; price: number }>>(item.extras),
+    removedIngredients: safeJsonParse<string[]>(item.removedIngredients),
+    itemNotes: item.itemNotes ?? null,
+  };
+}
+
 async function getOrderWithItems(orderId: number) {
   const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
   if (!order) return null;
@@ -30,15 +50,7 @@ async function getOrderWithItems(orderId: number) {
     status: order.status,
     total: Number(order.total),
     notes: order.notes ?? null,
-    items: items.map((item) => ({
-      id: item.id,
-      orderId: item.orderId,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      totalPrice: Number(item.totalPrice),
-    })),
+    items: items.map(toOrderItemDto),
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
   };
@@ -76,15 +88,7 @@ router.get("/orders", requireAuth, async (req, res): Promise<void> => {
     status: order.status,
     total: Number(order.total),
     notes: order.notes ?? null,
-    items: (itemsByOrder.get(order.id) ?? []).map((item) => ({
-      id: item.id,
-      orderId: item.orderId,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      totalPrice: Number(item.totalPrice),
-    })),
+    items: (itemsByOrder.get(order.id) ?? []).map(toOrderItemDto),
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
   }));
@@ -124,6 +128,9 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res): Promise<void>
         quantity: item.quantity,
         unitPrice: String(item.unitPrice),
         totalPrice: String(item.quantity * item.unitPrice),
+        extras: item.extras ? JSON.stringify(item.extras) : null,
+        removedIngredients: item.removedIngredients ? JSON.stringify(item.removedIngredients) : null,
+        itemNotes: item.itemNotes ?? null,
       }))
     );
   }

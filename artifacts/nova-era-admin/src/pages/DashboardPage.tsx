@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import {
   DollarSign, ShoppingBag, Clock, Package,
-  Loader2, ArrowRight, TrendingUp, TrendingDown, Minus
+  Loader2, ArrowRight, TrendingUp, TrendingDown, Minus, Receipt
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -121,6 +121,11 @@ export default function DashboardPage() {
   const { data: topProducts, isLoading: topProductsLoading } = useGetTopProducts();
   const { data: recentOrders, isLoading: ordersLoading } = useGetRecentOrders();
 
+  const ticketMedio =
+    stats && stats.monthOrders > 0
+      ? stats.monthRevenue / stats.monthOrders
+      : 0;
+
   return (
     <div className="space-y-6 max-w-screen-2xl">
       <div>
@@ -132,7 +137,7 @@ export default function DashboardPage() {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
       >
         <StatCard
           title="Receita de Hoje"
@@ -151,6 +156,16 @@ export default function DashboardPage() {
           icon={ShoppingBag}
           iconColor="bg-primary/10 text-primary"
           gradient="from-primary/5 to-transparent"
+          trend={null}
+          loading={statsLoading}
+        />
+        <StatCard
+          title="Ticket Médio"
+          value={formatCurrency(ticketMedio)}
+          sub="Por pedido no mês"
+          icon={Receipt}
+          iconColor="bg-emerald-500/10 text-emerald-400"
+          gradient="from-emerald-500/5 to-transparent"
           trend={null}
           loading={statsLoading}
         />

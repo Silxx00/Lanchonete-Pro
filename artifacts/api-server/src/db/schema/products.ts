@@ -24,6 +24,8 @@ export const productsTable = pgTable(
     stock: integer("stock").notNull().default(0),
     active: boolean("active").notNull().default(true),
     featured: boolean("featured").notNull().default(false),
+    prepTime: integer("prep_time"),
+    internalNotes: text("internal_notes"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

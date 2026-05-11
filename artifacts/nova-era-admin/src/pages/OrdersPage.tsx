@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, ChevronRight, Check, ShoppingCart } from "lucide-react";
+import { Search, ChevronRight, Check, ShoppingCart, Plus, Minus, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ import {
   useUpdateOrder,
 } from "@workspace/api-client-react";
 
-import type { Order } from "@workspace/api-client-react";
+import type { Order, OrderItem } from "@workspace/api-client-react";
 
 const STATUSES = ["all", "pending", "accepted", "preparing", "ready", "delivered", "cancelled"] as const;
 
@@ -46,6 +46,52 @@ const STATUS_COLORS: Record<string, string> = {
 
 const getStatusColor = (status: string) =>
   STATUS_COLORS[status.toLowerCase()] ?? "bg-primary/10 text-primary border-primary/20";
+
+function OrderItemRow({ item }: { item: OrderItem }) {
+  const hasExtras = item.extras && item.extras.length > 0;
+  const hasRemoved = item.removedIngredients && item.removedIngredients.length > 0;
+  const hasNotes = !!item.itemNotes;
+  const hasDetail = hasExtras || hasRemoved || hasNotes;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-start">
+        <div className="flex items-start gap-3">
+          <div className="bg-muted text-muted-foreground w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0">
+            {item.quantity}x
+          </div>
+          <div>
+            <span className="text-sm font-medium leading-tight">{item.productName}</span>
+            {hasDetail && (
+              <div className="mt-1 space-y-0.5">
+                {hasExtras && item.extras!.map((ex) => (
+                  <div key={ex.id} className="flex items-center gap-1 text-[11px] text-emerald-400">
+                    <Plus className="h-2.5 w-2.5" />
+                    <span>{ex.name}</span>
+                    {ex.price > 0 && <span className="text-muted-foreground">+{formatCurrency(ex.price)}</span>}
+                  </div>
+                ))}
+                {hasRemoved && item.removedIngredients!.map((ing, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[11px] text-red-400">
+                    <Minus className="h-2.5 w-2.5" />
+                    <span>sem {ing}</span>
+                  </div>
+                ))}
+                {hasNotes && (
+                  <div className="flex items-center gap-1 text-[11px] text-amber-400 italic">
+                    <FileText className="h-2.5 w-2.5" />
+                    <span>{item.itemNotes}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <span className="text-sm font-medium shrink-0 ml-3">{formatCurrency(item.totalPrice)}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function OrdersPage() {
   const queryClient = useQueryClient();
@@ -171,7 +217,7 @@ export default function OrdersPage() {
 
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
         {selectedOrder && (
-          <DialogContent className="sm:max-w-[580px] bg-card border-border p-0 overflow-hidden rounded-2xl">
+          <DialogContent className="sm:max-w-[600px] bg-card border-border p-0 overflow-hidden rounded-2xl">
             <div className="p-6 pb-0">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -212,23 +258,15 @@ export default function OrdersPage() {
 
             <div className="p-6">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Itens do Pedido</p>
-              <div className="space-y-3">
-                {selectedOrder.items.map((item: { id: number; quantity: number; productName: string; totalPrice: number }) => (
-                  <div key={item.id} className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted text-muted-foreground w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs">
-                        {item.quantity}x
-                      </div>
-                      <span className="text-sm font-medium">{item.productName}</span>
-                    </div>
-                    <span className="text-sm font-medium">{formatCurrency(item.totalPrice)}</span>
-                  </div>
+              <div className="space-y-4">
+                {selectedOrder.items.map((item) => (
+                  <OrderItemRow key={item.id} item={item} />
                 ))}
               </div>
 
               {selectedOrder.notes && (
                 <div className="mt-5 p-3.5 bg-muted/40 rounded-xl border border-border">
-                  <p className="text-xs font-semibold text-muted-foreground mb-1">Observações do cliente:</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Observações do pedido:</p>
                   <p className="text-sm text-foreground/80 italic">{selectedOrder.notes}</p>
                 </div>
               )}

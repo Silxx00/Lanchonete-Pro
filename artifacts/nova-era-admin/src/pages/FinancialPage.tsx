@@ -9,6 +9,7 @@ import {
   DollarSign, TrendingUp, TrendingDown, Minus, AlertTriangle,
   Plus, Pencil, Trash2, Loader2, CheckCircle2, X,
   BarChart3, Wallet, ArrowUpRight, ArrowDownRight, Receipt,
+  Banknote, CreditCard, Smartphone,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,7 +24,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import {
   useFinancialSummary, useMonthlyChart, useExpenses, useCashClosings,
   useFinancialInsights, useCreateExpense, useUpdateExpense, useDeleteExpense,
-  useCreateCashClosing, type Expense, type CreateExpenseInput,
+  useCreateCashClosing, type Expense, type CreateExpenseInput, type CreateCashClosingInput,
 } from "@/hooks/useFinancial";
 import { toast } from "sonner";
 
@@ -161,20 +162,39 @@ function ExpenseForm({
 function CashClosingForm({
   onSave, onCancel, loading,
 }: {
-  onSave: (data: { periodStart: string; periodEnd: string; notes?: string }) => void;
+  onSave: (data: CreateCashClosingInput) => void;
   onCancel: () => void;
   loading: boolean;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
-  const [form, setForm] = useState({ periodStart: firstOfMonth, periodEnd: today, notes: "" });
+  const [form, setForm] = useState({
+    periodStart: firstOfMonth,
+    periodEnd: today,
+    notes: "",
+    cashAmount: "",
+    pixAmount: "",
+    cardAmount: "",
+  });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const cash = parseFloat(form.cashAmount) || 0;
+  const pix = parseFloat(form.pixAmount) || 0;
+  const card = parseFloat(form.cardAmount) || 0;
+  const countedTotal = cash + pix + card;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.periodStart || !form.periodEnd) { toast.error("Período obrigatório"); return; }
     if (form.periodStart > form.periodEnd) { toast.error("Data inicial deve ser anterior à final"); return; }
-    onSave({ periodStart: form.periodStart + "T00:00:00.000Z", periodEnd: form.periodEnd + "T23:59:59.999Z", notes: form.notes || undefined });
+    onSave({
+      periodStart: form.periodStart + "T00:00:00.000Z",
+      periodEnd: form.periodEnd + "T23:59:59.999Z",
+      notes: form.notes || undefined,
+      cashAmount: cash || undefined,
+      pixAmount: pix || undefined,
+      cardAmount: card || undefined,
+    });
   };
 
   return (
@@ -192,6 +212,52 @@ function CashClosingForm({
           <Input type="date" value={form.periodEnd} onChange={e => set("periodEnd", e.target.value)} className="h-9 text-sm" />
         </div>
       </div>
+
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Valores Contados (opcional)</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1 block">
+              <Banknote className="h-3 w-3" /> Dinheiro
+            </Label>
+            <Input
+              type="number" step="0.01" min="0"
+              value={form.cashAmount}
+              onChange={e => set("cashAmount", e.target.value)}
+              placeholder="0,00" className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1 block">
+              <Smartphone className="h-3 w-3" /> PIX
+            </Label>
+            <Input
+              type="number" step="0.01" min="0"
+              value={form.pixAmount}
+              onChange={e => set("pixAmount", e.target.value)}
+              placeholder="0,00" className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1 block">
+              <CreditCard className="h-3 w-3" /> Cartão
+            </Label>
+            <Input
+              type="number" step="0.01" min="0"
+              value={form.cardAmount}
+              onChange={e => set("cardAmount", e.target.value)}
+              placeholder="0,00" className="h-9 text-sm"
+            />
+          </div>
+        </div>
+        {countedTotal > 0 && (
+          <div className="mt-2 p-2.5 rounded-lg bg-muted/30 border border-border flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Total contado</span>
+            <span className="text-sm font-bold text-foreground">{formatCurrency(countedTotal)}</span>
+          </div>
+        )}
+      </div>
+
       <div>
         <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5 block">Observações</Label>
         <Input value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Ex: Fechamento quinzenal" className="h-9 text-sm" />
@@ -260,7 +326,7 @@ export default function FinancialPage() {
     });
   }, [deleteId, deleteExp]);
 
-  const handleCreateClosing = useCallback((data: { periodStart: string; periodEnd: string; notes?: string }) => {
+  const handleCreateClosing = useCallback((data: CreateCashClosingInput) => {
     createClosing.mutate(data, {
       onSuccess: () => { toast.success("Fechamento de caixa realizado"); setClosingDialog(false); },
       onError: (e) => toast.error(e.message),
@@ -383,7 +449,6 @@ export default function FinancialPage() {
               <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}</div>
             ) : !insights.data ? null : (
               <>
-                {/* Alerts */}
                 {insights.data.alerts.length > 0 && (
                   <div className="space-y-1.5">
                     {insights.data.alerts.map((a, i) => (
@@ -395,7 +460,6 @@ export default function FinancialPage() {
                   </div>
                 )}
 
-                {/* Revenue growth */}
                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border">
                   <div className="flex items-center gap-2">
                     {insights.data.revenueGrowth >= 0
@@ -406,7 +470,6 @@ export default function FinancialPage() {
                   <TrendBadge value={insights.data.revenueGrowth} />
                 </div>
 
-                {/* Margin */}
                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-indigo-400" />
@@ -415,7 +478,6 @@ export default function FinancialPage() {
                   <span className={cn("text-xs font-semibold", marginColor)}>{insights.data.margin.toFixed(1)}%</span>
                 </div>
 
-                {/* Top expense category */}
                 {insights.data.topExpenseCategory && (
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border">
                     <div className="flex items-center gap-2">
@@ -429,7 +491,6 @@ export default function FinancialPage() {
                   </div>
                 )}
 
-                {/* Category pie */}
                 {insights.data.categoryBreakdown.length > 0 && (
                   <div className="mt-2">
                     <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wide mb-1">Gastos por categoria</p>
@@ -527,7 +588,6 @@ export default function FinancialPage() {
                   </div>
                 ))}
               </div>
-              {/* Pagination */}
               {expenses.data.total > 15 && (
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                   <p className="text-xs text-muted-foreground">
@@ -562,36 +622,81 @@ export default function FinancialPage() {
               <p className="text-xs mt-1 opacity-60">Use o botão "Fechar Caixa" para registrar</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {closings.data.map(c => (
-                <div key={c.id} className="p-3.5 border border-border rounded-xl bg-background/20">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="text-xs font-medium text-foreground">
-                        {new Date(c.periodStart).toLocaleDateString("pt-BR")} → {new Date(c.periodEnd).toLocaleDateString("pt-BR")}
+            <div className="space-y-3">
+              {closings.data.map(c => {
+                const hasPaymentBreakdown = c.cashAmount != null || c.pixAmount != null || c.cardAmount != null;
+                const diff = c.countedTotal != null ? c.countedTotal - c.grossRevenue : null;
+                return (
+                  <div key={c.id} className="p-4 border border-border rounded-xl bg-background/20 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-medium text-foreground">
+                          {new Date(c.periodStart).toLocaleDateString("pt-BR")} → {new Date(c.periodEnd).toLocaleDateString("pt-BR")}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          {c.orderCount} pedidos · Fechado em {new Date(c.createdAt).toLocaleDateString("pt-BR")}
+                          {c.notes && ` · ${c.notes}`}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {c.orderCount} pedidos · Fechado em {new Date(c.createdAt).toLocaleDateString("pt-BR")}
-                        {c.notes && ` · ${c.notes}`}
+                      <div className="flex items-center gap-4 text-right shrink-0">
+                        <div>
+                          <div className="text-[10px] text-muted-foreground">Receita</div>
+                          <div className="text-sm font-semibold text-primary">{formatCurrency(c.grossRevenue)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-muted-foreground">Gastos</div>
+                          <div className="text-sm font-semibold text-red-400">{formatCurrency(c.totalExpenses)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-muted-foreground">Lucro</div>
+                          <div className={cn("text-sm font-bold", c.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>{formatCurrency(c.netProfit)}</div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-right shrink-0">
-                      <div>
-                        <div className="text-[10px] text-muted-foreground">Receita</div>
-                        <div className="text-sm font-semibold text-primary">{formatCurrency(c.grossRevenue)}</div>
+                    {hasPaymentBreakdown && (
+                      <div className="pt-2 border-t border-border/60">
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Breakdown:</span>
+                          {c.cashAmount != null && c.cashAmount > 0 && (
+                            <div className="flex items-center gap-1 text-[11px] bg-muted/30 rounded-md px-2 py-0.5 border border-border">
+                              <Banknote className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">Dinheiro</span>
+                              <span className="font-medium text-foreground">{formatCurrency(c.cashAmount)}</span>
+                            </div>
+                          )}
+                          {c.pixAmount != null && c.pixAmount > 0 && (
+                            <div className="flex items-center gap-1 text-[11px] bg-muted/30 rounded-md px-2 py-0.5 border border-border">
+                              <Smartphone className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">PIX</span>
+                              <span className="font-medium text-foreground">{formatCurrency(c.pixAmount)}</span>
+                            </div>
+                          )}
+                          {c.cardAmount != null && c.cardAmount > 0 && (
+                            <div className="flex items-center gap-1 text-[11px] bg-muted/30 rounded-md px-2 py-0.5 border border-border">
+                              <CreditCard className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">Cartão</span>
+                              <span className="font-medium text-foreground">{formatCurrency(c.cardAmount)}</span>
+                            </div>
+                          )}
+                          {diff != null && (
+                            <div className={cn(
+                              "flex items-center gap-1 text-[11px] rounded-md px-2 py-0.5 border ml-auto",
+                              Math.abs(diff) < 0.01
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                : diff > 0
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                : "bg-red-500/10 border-red-500/20 text-red-400"
+                            )}>
+                              <span>Diferença:</span>
+                              <span className="font-semibold">{diff >= 0 ? "+" : ""}{formatCurrency(diff)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-[10px] text-muted-foreground">Gastos</div>
-                        <div className="text-sm font-semibold text-red-400">{formatCurrency(c.totalExpenses)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-muted-foreground">Lucro</div>
-                        <div className={cn("text-sm font-bold", c.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>{formatCurrency(c.netProfit)}</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

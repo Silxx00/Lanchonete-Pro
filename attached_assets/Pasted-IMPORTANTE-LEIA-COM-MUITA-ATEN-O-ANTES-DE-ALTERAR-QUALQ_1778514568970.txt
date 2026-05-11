@@ -1,0 +1,101 @@
+IMPORTANTE — LEIA COM MUITA ATENÇÃO ANTES DE ALTERAR QUALQUER COISA
+
+O sistema de login deste projeto JÁ FOI corrigido anteriormente e atualmente está funcional. O erro 500 antigo do login foi causado especificamente pela ausência deste import no auth.ts:
+
+import { verifyPassword } from "../lib/password";
+
+Esse import NÃO pode ser removido, alterado ou duplicado.
+
+O objetivo NÃO é refatorar o auth inteiro.
+O objetivo é apenas:
+- verificar estabilidade
+- adicionar proteção segura
+- garantir que nada dos produtos afete o login
+- evitar regressões
+
+==================================================
+REGRAS ABSOLUTAS SOBRE O LOGIN
+==================================================
+
+NÃO:
+- reescrever auth.ts do zero
+- trocar JWT
+- trocar middleware
+- trocar sistema de refresh token
+- trocar estrutura do requireAuth
+- remover verifyPassword
+- remover hashPassword
+- alterar payload do token
+- alterar rotas /auth/*
+- alterar lógica de roles
+- alterar tabela users
+- alterar refreshTokensTable
+- alterar loginAttemptsTable
+- alterar SESSION_SECRET
+- alterar formato das responses
+- remover auditLog
+- remover rateLimiter
+- remover try/catch existentes
+- remover logs importantes
+
+NÃO fazer “melhorias agressivas” no auth.
+NÃO modernizar auth.
+NÃO mexer em código funcional sem necessidade.
+
+==================================================
+O QUE DEVE SER FEITO NO LOGIN
+==================================================
+
+APENAS:
+
+1. Verificar se verifyPassword continua importado corretamente:
+
+import { verifyPassword } from "../lib/password";
+
+2. Verificar se hashPassword continua funcionando.
+
+3. Garantir que PATCH /auth/me não gera crash.
+
+4. Garantir que login admin funciona.
+
+5. Garantir que login gerente funciona.
+
+6. Garantir que login funcionario funciona.
+
+7. Garantir que refresh token continua funcionando.
+
+8. Garantir que logout continua funcionando.
+
+9. Adicionar APENAS proteções seguras:
+- logs melhores
+- try/catch seguros
+- mensagens claras
+- prevenção de crash silencioso
+
+==================================================
+IMPORTANTE
+==================================================
+
+O FOCO PRINCIPAL da correção é PRODUCTS.
+NÃO AUTH.
+
+O login já funciona.
+O auth NÃO deve ser reestruturado.
+O auth NÃO deve ser “otimizado”.
+O auth NÃO deve ser refatorado.
+
+Apenas:
+- preservar estabilidade
+- evitar regressão
+- garantir que products não afete auth
+
+==================================================
+OBJETIVO REAL
+==================================================
+
+Corrigir:
+- erro 500 em products
+- inconsistência de tipos
+- problemas entre frontend/backend/Zod/Neon
+
+SEM quebrar o login novamente.

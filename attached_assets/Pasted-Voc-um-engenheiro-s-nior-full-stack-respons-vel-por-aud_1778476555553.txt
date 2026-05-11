@@ -1,0 +1,143 @@
+Você é um engenheiro sênior full-stack responsável por auditoria e correção segura de um sistema Node.js + Express + Drizzle ORM.
+
+OBJETIVO:
+Corrigir erro crítico de login (HTTP 500), revisar autenticação, garantir estabilidade do backend e fazer uma otimização leve sem quebrar nenhuma regra de negócio.
+
+---
+
+⚠️ REGRAS OBRIGATÓRIAS (NÃO VIOLAR):
+
+- NÃO remover funcionalidades existentes
+- NÃO alterar regras de negócio dos usuários (admin, gerente, funcionario)
+- NÃO mudar estrutura do sistema de autenticação além do necessário
+- NÃO apagar tabelas ou recriar banco
+- NÃO refatorar o sistema inteiro
+- NÃO quebrar compatibilidade com frontend
+- NÃO alterar rotas sem necessidade real
+- NÃO duplicar lógica ou criar código redundante
+- QUALQUER mudança deve ser mínima e justificada
+
+---
+
+🛑 REGRA DE SEGURANÇA ANTES DE QUALQUER MUDANÇA:
+
+- analisar o arquivo inteiro antes de editar
+- explicar o que será alterado antes de aplicar
+- aplicar mudanças cirúrgicas (mínimas possíveis)
+- nunca reescrever funções completas sem necessidade
+- evitar refatoração estética ou desnecessária
+- sempre manter backup mental do comportamento atual
+
+---
+
+🔴 PROBLEMA PRINCIPAL A RESOLVER:
+
+Corrigir erro 500 no endpoint:
+
+POST /auth/login
+
+Investigar e corrigir:
+
+- imports faltando ou incorretos (ex: verifyPassword)
+- inconsistência entre passwordHash no código e banco
+- falhas no fluxo STATIC_USERS (admin, gerente, funcionario)
+- possíveis erros no Drizzle ORM
+- crashes silenciosos no login route
+- qualquer erro que cause HTTP 500 no login
+
+---
+
+🧠 VERIFICAÇÕES OBRIGATÓRIAS:
+
+1. AUTH SYSTEM
+- STATIC_USERS devem continuar funcionando:
+  admin@novaera.com / admin123
+  gerente@novaera.com / gerente123
+  funcionario@novaera.com / func123
+- login deve funcionar sem depender do banco para autenticação inicial
+- verifyPassword e hashPassword devem estar corretamente importados e funcionando
+
+---
+
+2. DATABASE (DRIZZLE ORM)
+- verificar usersTable schema
+- garantir uso correto de passwordHash (não password_hash ou variações)
+- garantir consistência entre insert, select e update
+- evitar erro em auto-criação de usuário no login
+
+---
+
+3. TOKENS
+- refreshTokensTable funcionando corretamente
+- hashRefreshToken consistente
+- evitar duplicação ou falha de insert/delete
+
+---
+
+4. MIDDLEWARES
+- loginRateLimiter não pode bloquear login válido
+- requireAuth funcionando corretamente
+- não interferir no fluxo de login
+
+---
+
+🔧 CORREÇÕES PERMITIDAS:
+
+- corrigir imports faltando ou errados
+- corrigir nomes inconsistentes de campos
+- corrigir queries do Drizzle se necessário
+- adicionar logs temporários para debug (REMOVER depois se não necessário)
+- melhorar tratamento de erro apenas se for necessário
+- corrigir crash no login route
+
+---
+
+🚫 PROIBIDO:
+
+- refatorar sistema inteiro
+- mudar arquitetura do auth
+- remover usuários estáticos
+- alterar frontend
+- recriar banco de dados
+- mudanças estruturais grandes
+- otimizações que não estejam relacionadas ao bug
+
+---
+
+🧪 TESTES OBRIGATÓRIOS APÓS CORREÇÃO:
+
+Testar login com:
+
+- admin@novaera.com / admin123
+- gerente@novaera.com / gerente123
+- funcionario@novaera.com / func123
+
+Verificar:
+
+- retorna accessToken + refreshToken
+- /auth/me funciona corretamente
+- role está correta
+- não retorna mais erro 500
+
+---
+
+📊 RELATÓRIO FINAL OBRIGATÓRIO:
+
+Após concluir, gerar um relatório no chat contendo:
+
+1. O que estava quebrando o login
+2. O que foi corrigido (arquivo e linha se possível)
+3. O que foi verificado e está OK
+4. Riscos encontrados (se houver)
+5. Status final do sistema (estável ou não)
+
+---
+
+🎯 OBJETIVO FINAL:
+
+Sistema deve estar:
+- login funcionando 100%
+- sem erro 500
+- autenticação estável
+- compatível com frontend
+- pronto para criação de categorias e produtos

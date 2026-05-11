@@ -12,6 +12,7 @@ import {
   UserCog,
   User,
   TrendingUp,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const navItems = [
   { name: "Promoções",   href: "/promotions",   icon: TicketPercent,   minLevel: 2 },
   { name: "Financeiro",  href: "/financeiro",   icon: TrendingUp,      minLevel: 2 },
   { name: "Usuários",    href: "/users",        icon: Users,           minLevel: 3 },
+  { name: "Reset",       href: "/reset",        icon: RotateCcw,       minLevel: 2 },
 ];
 
 const ROLE_LEVELS: Record<string, number> = { admin: 3, gerente: 2, funcionario: 1 };

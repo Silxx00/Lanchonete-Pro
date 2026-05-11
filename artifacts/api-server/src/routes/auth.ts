@@ -27,9 +27,24 @@ const STATIC_USERS: {
   role: StaticUserRole;
   name: string;
 }[] = [
-  { email: "admin@novaera.com", password: "admin123", role: "admin", name: "Admin" },
-  { email: "gerente@novaera.com", password: "gerente123", role: "gerente", name: "Gerente" },
-  { email: "funcionario@novaera.com", password: "func123", role: "funcionario", name: "Funcionário" },
+  {
+    email: "admin@novaera.com",
+    password: "admin123",
+    role: "admin",
+    name: "admin",
+  },
+  {
+    email: "gerente@novaera.com",
+    password: "gerente123",
+    role: "gerente",
+    name: "gerente",
+  },
+  {
+    email: "funcionario@novaera.com",
+    password: "func123",
+    role: "funcionario",
+    name: "funcionário",
+  },
 ];
 
 const LOCKOUT_MAX_ATTEMPTS = 5;
@@ -145,7 +160,10 @@ router.post(
     const staticUser = STATIC_USERS.find((u) => u.email === normalizedEmail);
 
     if (!staticUser || staticUser.password !== password) {
-      logger.debug({ email: normalizedEmail }, "Login inválido (usuário estático)");
+      logger.debug(
+        { email: normalizedEmail },
+        "Login inválido (usuário estático)",
+      );
       await recordAttempt(normalizedEmail, ip, false);
       res.status(401).json({ error: "Email ou senha inválidos" });
       return;
@@ -170,7 +188,10 @@ router.post(
           active: true,
         })
         .returning();
-      logger.info({ email: staticUser.email }, "Static user auto-created in DB");
+      logger.info(
+        { email: staticUser.email },
+        "Static user auto-created in DB",
+      );
     }
 
     await recordAttempt(normalizedEmail, ip, true);

@@ -1,0 +1,190 @@
+Faça uma auditoria COMPLETA e PROFISSIONAL no sistema de produtos do projeto sem alterar arquitetura, autenticação, permissões, estrutura principal, rotas existentes, nomes de endpoints, tokens JWT, middleware de auth, workflow do Replit ou qualquer lógica já funcional.
+
+OBJETIVO PRINCIPAL:
+Corrigir DEFINITIVAMENTE o erro 500 ao criar produtos no painel administrativo.
+
+CONTEXTO CONFIRMADO:
+- O login já foi corrigido e está funcionando.
+- A criação de categorias já funciona.
+- O problema restante está na criação de produtos.
+- O banco Neon já está correto.
+- A tabela products possui exatamente estas colunas:
+
+id
+active
+featured
+updated_at
+price
+category_id
+created_at
+stock
+name
+image_url
+description
+
+IMPORTANTE:
+NÃO recriar tabelas.
+NÃO mexer no auth.
+NÃO alterar JWT.
+NÃO alterar roles.
+NÃO alterar middleware.
+NÃO mexer em categories.ts que já está funcionando.
+NÃO remover logs.
+NÃO alterar arquitetura do Drizzle.
+NÃO criar código duplicado.
+NÃO adicionar dependências desnecessárias.
+NÃO alterar rotas do frontend.
+NÃO quebrar compatibilidade do frontend atual.
+
+FAÇA SOMENTE correções seguras, consistentes e necessárias.
+
+==================================================
+ETAPA 1 — AUDITORIA COMPLETA
+==================================================
+
+Audite TODOS os arquivos relacionados a produtos:
+
+- products.ts
+- validation/api.ts
+- schema/products.ts
+- db/schema/products.ts
+- qualquer arquivo de formulário/admin relacionado
+- qualquer client fetch/api relacionado
+- qualquer mapper DTO relacionado
+
+Verifique:
+- inconsistências de tipos
+- campos duplicados
+- campos antigos
+- image vs imageUrl
+- category vs categoryId
+- string vs number
+- nullable incorreto
+- parse incorreto
+- incompatibilidade Neon/Drizzle
+- incompatibilidade frontend/backend
+- incompatibilidade Zod
+- valores undefined
+- valores vazios
+- problemas com numeric do PostgreSQL
+- problemas com zod parse
+- problemas com req.body
+- problemas de serialização
+- problemas de returning()
+
+==================================================
+ETAPA 2 — CORREÇÃO DEFINITIVA
+==================================================
+
+Corrija o schema de validação para aceitar corretamente dados vindos do frontend.
+
+USE z.coerce.number() ONDE NECESSÁRIO.
+
+O CreateProductBody DEVE aceitar:
+
+{
+  name: string,
+  description?: string | null,
+  price: string ou number,
+  imageUrl?: string | null,
+  categoryId?: string ou number ou null,
+  stock?: string ou number,
+  active?: boolean,
+  featured?: boolean
+}
+
+O UpdateProductBody DEVE seguir a mesma lógica.
+
+NÃO remover validações importantes.
+
+==================================================
+ETAPA 3 — HARDENING
+==================================================
+
+Adicione proteção profissional para evitar novos erros 500:
+
+- logs detalhados
+- mensagens claras
+- validação segura
+- tratamento de null
+- tratamento de undefined
+- fallback seguro
+- sanitização de strings
+- trim automático
+- validação de category_id
+- prevenção de inserts inválidos
+- prevenção de crash do Express
+
+==================================================
+ETAPA 4 — CONSISTÊNCIA TOTAL
+==================================================
+
+Verifique se:
+- frontend envia imageUrl corretamente
+- backend espera imageUrl corretamente
+- banco usa image_url corretamente
+- categoryId está consistente
+- numeric price está consistente
+- stock está consistente
+- DTOs estão consistentes
+- responses estão consistentes
+
+==================================================
+ETAPA 5 — TESTES REAIS
+==================================================
+
+Faça testes REAIS:
+
+- criar produto
+- editar produto
+- listar produtos
+- deletar produto
+- produto com categoria
+- produto sem categoria
+- produto com imagem
+- produto sem imagem
+- produto com preço string
+- produto com preço number
+- produto com stock string
+- produto com stock number
+
+==================================================
+ETAPA 6 — OTIMIZAÇÃO CLEAN
+==================================================
+
+Sem mudar o visual principal:
+- remova redundâncias
+- remova código morto
+- melhore legibilidade
+- mantenha padrão existente
+- mantenha compatibilidade total
+
+==================================================
+ETAPA 7 — RELATÓRIO FINAL OBRIGATÓRIO
+==================================================
+
+Ao terminar:
+- MOSTRE exatamente o que foi alterado
+- liste TODOS os arquivos modificados
+- explique a causa raiz do erro 500
+- confirme que não há código duplicado
+- confirme que não há campos inconsistentes
+- confirme que Neon e Drizzle estão sincronizados
+- confirme que o frontend continua compatível
+- confirme que categories continua funcionando
+- confirme que auth continua funcionando
+- confirme que products agora funciona corretamente
+
+ANTES DE FINALIZAR:
+Faça uma auditoria final completa para garantir:
+- sem conflitos
+- sem duplicações
+- sem imports quebrados
+- sem schemas antigos
+- sem campos órfãos
+- sem tipagens conflitantes
+- sem código desnecessário
+- sem regressões
+- sem risco de quebrar login
+- sem risco de quebrar categories
+- sem risco de quebrar produtos futuramente

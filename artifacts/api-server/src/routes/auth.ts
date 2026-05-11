@@ -13,6 +13,9 @@ import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { logger } from "../lib/logger";
 import { LoginBody, GetMeResponse, UpdateMeBody } from "../validation/api";
 
+/* ✅ ADICIONADO AQUI (CORREÇÃO DO ERRO 500) */
+import { verifyPassword } from "../lib/password";
+
 const router: IRouter = Router();
 
 /* =========================
@@ -153,10 +156,6 @@ router.post(
       return;
     }
 
-    /* =========================
-     STATIC USER AUTH (no DB lookup for credentials)
-    ========================= */
-
     const staticUser = STATIC_USERS.find((u) => u.email === normalizedEmail);
 
     if (!staticUser || staticUser.password !== password) {
@@ -169,8 +168,6 @@ router.post(
       return;
     }
 
-    /* Look up DB row by email to get the user ID for the refresh token FK.
-       The seed guarantees these rows exist; create if somehow missing. */
     let [user] = await db
       .select()
       .from(usersTable)
@@ -188,10 +185,6 @@ router.post(
           active: true,
         })
         .returning();
-      logger.info(
-        { email: staticUser.email },
-        "Static user auto-created in DB",
-      );
     }
 
     await recordAttempt(normalizedEmail, ip, true);
@@ -345,10 +338,12 @@ router.patch(
           .json({ error: "Senha atual é obrigatória para alterar a senha" });
         return;
       }
+
       const valid = await verifyPassword(
         currentPassword,
         existing.passwordHash,
       );
+
       if (!valid) {
         res.status(400).json({ error: "Senha atual incorreta" });
         return;
@@ -358,6 +353,7 @@ router.patch(
     const updateData: Partial<typeof usersTable.$inferInsert> = {};
     if (name != null) updateData.name = name;
     if (email != null) updateData.email = email;
+
     if (newPassword) {
       const { hashPassword } = await import("../lib/password");
       updateData.passwordHash = await hashPassword(newPassword);

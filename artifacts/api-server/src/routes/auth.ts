@@ -43,7 +43,7 @@ const STATIC_USERS: {
     email: "funcionario@novaera.com",
     password: "func123",
     role: "funcionario",
-    name: "funcionário",
+    name: "funcionario",
   },
 ];
 

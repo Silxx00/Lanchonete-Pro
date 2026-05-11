@@ -1,0 +1,96 @@
+Refatore o PAINEL ADMIN do sistema de categorias com foco em limpeza e padronização, mas respeitando limites rígidos de segurança para NÃO quebrar autenticação, permissões ou estrutura de banco.
+
+⚠️ REGRAS CRÍTICAS (NÃO MEXER)
+
+A IA NÃO pode alterar:
+
+❌ Sistema de autenticação (requireAuth)
+❌ Sistema de permissões (requireAdminOrManager)
+❌ Estrutura da tabela categoriesTable
+❌ Campos do banco (não renomear colunas no DB)
+❌ Fluxo de login/usuário
+❌ Sistema de auditLog (apenas manter funcionamento)
+❌ Estrutura de middleware
+❌ Rotas de outras entidades além de categories
+❌ Tipos globais de auth (AuthRequest)
+
+👉 Qualquer melhoria NÃO deve quebrar compatibilidade existente.
+
+🎯 OBJETIVO
+
+Limpar, padronizar e eliminar duplicações do painel admin de categories sem alterar regras críticas.
+
+🧱 PERMITIDO ALTERAR
+Remover qualquer uso de SQL manual (pool, client.query)
+Garantir uso exclusivo de Drizzle ORM
+Melhorar legibilidade do código
+Padronizar DTOs (sem mudar DB)
+Ajustar validação Zod se necessário
+Melhorar tipagem e organização
+Remover código duplicado ou morto
+Padronizar responses da API
+🚨 REGRA DE BANCO (IMPORTANTE)
+NÃO renomear colunas no banco
+Se o banco usa snake_case, manter mapping no código
+Exemplo:
+DB: image_url
+API: imageUrl (via mapping DTO)
+
+👉 Só pode ajustar no código, nunca no banco.
+
+🧠 PADRONIZAÇÃO DE API
+
+Manter este DTO no output:
+
+{
+  id: number,
+  name: string,
+  description: string | null,
+  imageUrl: string | null,
+  active: boolean,
+  createdAt: string,
+  updatedAt: string
+}
+🛣️ ROTAS (NÃO MUDAR ESTRUTURA)
+
+Manter exatamente:
+
+GET /categories
+POST /categories
+GET /categories/:id
+PATCH /categories/:id
+DELETE /categories/:id
+
+👉 Apenas melhorar implementação interna, não mudar nome ou comportamento externo.
+
+🔐 SEGURANÇA (MANTER INTACTA)
+requireAuth deve permanecer em todas as rotas
+requireAdminOrManager deve permanecer em POST/PATCH/DELETE
+auditLog deve continuar sendo chamado nas ações críticas
+NÃO remover logs importantes de segurança
+🧹 LIMPEZA PERMITIDA
+Remover SQL manual antigo (pool)
+Remover imports não usados
+Remover código duplicado
+Melhorar estrutura de funções
+Melhorar organização de helpers locais
+⚙️ MELHORIAS PERMITIDAS
+Melhorar legibilidade do código
+Melhorar tipagem TypeScript
+Melhorar consistência de responses
+Melhorar tratamento de erros (sem mudar status codes já usados)
+Melhorar padronização de null/undefined
+🚫 PROIBIDO
+Não mudar regras de autenticação
+Não mudar lógica de permissão
+Não mudar banco de dados
+Não criar novas rotas sem necessidade
+Não alterar fluxo do painel
+Não modificar contratos já usados pelo frontend
+🚀 RESULTADO ESPERADO
+Código mais limpo e organizado
+Sem SQL manual
+Totalmente baseado em Drizzle
+Segurança intacta
+Frontend do painel funcionando sem nenhuma quebra
+API estável e pronta para produção (Render)

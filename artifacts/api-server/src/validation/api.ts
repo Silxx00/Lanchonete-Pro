@@ -452,6 +452,8 @@ export const GetDashboardStatsResponse = zod.object({
   activeProducts: zod.number(),
   totalProducts: zod.number(),
   activePromotions: zod.number(),
+  activeCombos: zod.number(),
+  totalCombos: zod.number(),
 });
 
 export const GetSalesChartResponseItem = zod.object({

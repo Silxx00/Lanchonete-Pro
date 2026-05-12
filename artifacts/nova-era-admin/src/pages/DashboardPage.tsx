@@ -6,7 +6,8 @@ import {
 } from "recharts";
 import {
   DollarSign, ShoppingBag, Clock, Package,
-  Loader2, ArrowRight, TrendingUp, TrendingDown, Minus, Receipt
+  Loader2, ArrowRight, TrendingUp, TrendingDown, Minus, Receipt,
+  Layers, AlertTriangle, HeartPulse,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -22,6 +23,7 @@ import {
   useGetTopProducts,
   useGetRecentOrders
 } from "@workspace/api-client-react";
+import { useSystemHealth } from "@/hooks/useSystemHealth";
 
 const STATUS_LABELS: Record<string, string> = {
   pending:   "Pendente",
@@ -121,6 +123,8 @@ export default function DashboardPage() {
   const { data: topProducts, isLoading: topProductsLoading } = useGetTopProducts();
   const { data: recentOrders, isLoading: ordersLoading } = useGetRecentOrders();
 
+  const { data: healthData } = useSystemHealth(true, 5 * 60 * 1000);
+
   const ticketMedio =
     stats && stats.monthOrders > 0
       ? stats.monthRevenue / stats.monthOrders
@@ -137,7 +141,7 @@ export default function DashboardPage() {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
       >
         <StatCard
           title="Receita de Hoje"
@@ -189,7 +193,49 @@ export default function DashboardPage() {
           trend={null}
           loading={statsLoading}
         />
+        <StatCard
+          title="Combos Ativos"
+          value={stats?.activeCombos || 0}
+          sub={`Total cadastrado: ${stats?.totalCombos || 0}`}
+          icon={Layers}
+          iconColor="bg-violet-500/10 text-violet-400"
+          gradient="from-violet-500/5 to-transparent"
+          trend={null}
+          loading={statsLoading}
+        />
       </motion.div>
+
+      {healthData && healthData.summary.totalIssues > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+            healthData.summary.high > 0 || healthData.summary.critical > 0
+              ? "bg-red-500/8 border-red-500/20"
+              : "bg-amber-500/8 border-amber-500/20"
+          }`}
+        >
+          <AlertTriangle className={`h-4 w-4 shrink-0 ${
+            healthData.summary.high > 0 || healthData.summary.critical > 0 ? "text-red-400" : "text-amber-400"
+          }`} />
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold ${
+              healthData.summary.high > 0 || healthData.summary.critical > 0 ? "text-red-400" : "text-amber-400"
+            }`}>
+              {healthData.summary.totalIssues} problema(s) detectado(s) no sistema
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {healthData.summary.high > 0 ? `${healthData.summary.high} alta(s) prioridade · ` : ""}
+              {healthData.summary.warnings > 0 ? `${healthData.summary.warnings} aviso(s)` : ""}
+            </p>
+          </div>
+          <Link href="/system-health">
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 shrink-0 border-border hover:border-primary/40">
+              <HeartPulse className="h-3 w-3" /> Ver detalhes
+            </Button>
+          </Link>
+        </motion.div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-7">
         <Card className="lg:col-span-4 bg-card border-card-border">

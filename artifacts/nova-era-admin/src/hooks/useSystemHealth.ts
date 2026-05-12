@@ -33,12 +33,12 @@ export interface SystemHealthResult {
   checkedAt: string;
 }
 
-export function useSystemHealth(enabled = false) {
+export function useSystemHealth(enabled = false, staleTime = 0) {
   return useQuery<SystemHealthResult>({
     queryKey: ["system-health"],
     queryFn: () => apiFetch("/api/admin/health-check"),
     enabled,
-    staleTime: 0,
-    gcTime: 60_000,
+    staleTime,
+    gcTime: 5 * 60 * 1000,
   });
 }

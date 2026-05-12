@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lte, count, sum, desc } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, promotionsTable } from "../db";
+import { db, ordersTable, orderItemsTable, productsTable, promotionsTable, combosTable } from "../db";
 import { inArray } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth";
 import {
@@ -26,6 +26,8 @@ router.get("/dashboard/stats", requireAuth, async (_req, res): Promise<void> => 
     activeProductsResult,
     totalProductsResult,
     activePromotionsResult,
+    activeCombosResult,
+    totalCombosResult,
   ] = await Promise.all([
     db.select({ count: count() }).from(ordersTable).where(gte(ordersTable.createdAt, todayStart)).then((r) => r[0]),
     db.select({ count: count() }).from(ordersTable).where(gte(ordersTable.createdAt, monthStart)).then((r) => r[0]),
@@ -35,6 +37,8 @@ router.get("/dashboard/stats", requireAuth, async (_req, res): Promise<void> => 
     db.select({ count: count() }).from(productsTable).where(eq(productsTable.active, true)).then((r) => r[0]),
     db.select({ count: count() }).from(productsTable).then((r) => r[0]),
     db.select({ count: count() }).from(promotionsTable).where(eq(promotionsTable.active, true)).then((r) => r[0]),
+    db.select({ count: count() }).from(combosTable).where(eq(combosTable.active, true)).then((r) => r[0]),
+    db.select({ count: count() }).from(combosTable).then((r) => r[0]),
   ]);
 
   res.json(GetDashboardStatsResponse.parse({
@@ -46,6 +50,8 @@ router.get("/dashboard/stats", requireAuth, async (_req, res): Promise<void> => 
     activeProducts: activeProductsResult?.count ?? 0,
     totalProducts: totalProductsResult?.count ?? 0,
     activePromotions: activePromotionsResult?.count ?? 0,
+    activeCombos: activeCombosResult?.count ?? 0,
+    totalCombos: totalCombosResult?.count ?? 0,
   }));
 });
 

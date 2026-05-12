@@ -401,6 +401,11 @@ export default function ProductsPage() {
   const updateMutation = useUpdateProduct();
   const deleteMutation = useDeleteProduct();
 
+  const [pendingExtras, setPendingExtras] = useState<{ name: string; price: number }[]>([]);
+  const [extraInputName, setExtraInputName] = useState("");
+  const [extraInputPrice, setExtraInputPrice] = useState("");
+  const createExtraMutation = useCreateProductExtra();
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: { name: "", description: "", price: 0, categoryId: undefined, stock: 0, imageUrl: "", active: true, featured: false, prepTime: undefined, internalNotes: "" },
@@ -408,6 +413,9 @@ export default function ProductsPage() {
 
   const openCreateModal = useCallback(() => {
     setEditingProduct(null);
+    setPendingExtras([]);
+    setExtraInputName("");
+    setExtraInputPrice("");
     form.reset({ name: "", description: "", price: 0, categoryId: categories?.[0]?.id || undefined, stock: 0, imageUrl: "", active: true, featured: false, prepTime: undefined, internalNotes: "" });
     setIsModalOpen(true);
   }, [form, categories]);
@@ -451,8 +459,22 @@ export default function ProductsPage() {
       createMutation.mutate(
         { data: payload as any },
         {
-          onSuccess: () => {
-            toast.success("Produto criado com sucesso");
+          onSuccess: async (product) => {
+            if (pendingExtras.length > 0) {
+              try {
+                await Promise.all(
+                  pendingExtras.map((ex) =>
+                    createExtraMutation.mutateAsync({ productId: (product as any).id, name: ex.name, price: ex.price })
+                  )
+                );
+                toast.success(`Produto criado com ${pendingExtras.length} adicional(is)`);
+              } catch {
+                toast.success("Produto criado");
+                toast.warning("Alguns adicionais falharam ao salvar");
+              }
+            } else {
+              toast.success("Produto criado com sucesso");
+            }
             queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
             setIsModalOpen(false);
           },
@@ -778,6 +800,79 @@ export default function ProductsPage() {
                   </FormItem>
                 )} />
               </div>
+
+              {!editingProduct && (
+                <div className="md:col-span-2 space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">Adicionais (opcional)</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  {pendingExtras.length > 0 && (
+                    <div className="space-y-1.5">
+                      {pendingExtras.map((ex, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-1.5 px-2.5 bg-background/40 rounded-lg border border-border text-xs">
+                          <span className="font-medium text-foreground truncate flex-1">{ex.name}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-muted-foreground">{ex.price > 0 ? formatCurrency(ex.price) : "Grátis"}</span>
+                            <button
+                              type="button"
+                              onClick={() => setPendingExtras((p) => p.filter((_, i) => i !== idx))}
+                              className="text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Input
+                      value={extraInputName}
+                      onChange={(e) => setExtraInputName(e.target.value)}
+                      placeholder="Nome do adicional (ex: Bacon extra)"
+                      className="h-8 text-xs flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const n = extraInputName.trim();
+                          if (!n) return;
+                          setPendingExtras((p) => [...p, { name: n, price: parseFloat(extraInputPrice) || 0 }]);
+                          setExtraInputName("");
+                          setExtraInputPrice("");
+                        }
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={extraInputPrice}
+                      onChange={(e) => setExtraInputPrice(e.target.value)}
+                      placeholder="Preço"
+                      className="h-8 text-xs w-20 shrink-0"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 gap-1 shrink-0"
+                      onClick={() => {
+                        const n = extraInputName.trim();
+                        if (!n) return;
+                        setPendingExtras((p) => [...p, { name: n, price: parseFloat(extraInputPrice) || 0 }]);
+                        setExtraInputName("");
+                        setExtraInputPrice("");
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {editingProduct && (
                 <div className="space-y-3 pt-2">

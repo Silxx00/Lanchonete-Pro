@@ -210,6 +210,14 @@ function ComboItemsManager({ combo }: { combo: Combo }) {
   );
 }
 
+// ── Pending item type for create-modal product picker ───────────────────────────
+interface PendingItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  productPrice: number;
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function CombosPage() {
   const { data: combos, isLoading } = useCombos();
@@ -223,6 +231,14 @@ export default function CombosPage() {
   const [editingCombo, setEditingCombo] = useState<Combo | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
+  const [itemSearch, setItemSearch] = useState("");
+  const debouncedItemSearch = useDebounce(itemSearch, 350);
+  const { data: searchableProducts } = useListProducts(
+    { search: debouncedItemSearch || undefined, active: "true" },
+    { query: { enabled: isModalOpen && !editingCombo } }
+  );
+
   const form = useForm<ComboFormValues>({
     resolver: zodResolver(comboSchema),
     defaultValues: { name: "", description: "", imageUrl: "", price: 0, active: true, featured: false },
@@ -232,8 +248,30 @@ export default function CombosPage() {
     !debouncedSearch || c.name.toLowerCase().includes(debouncedSearch.toLowerCase())
   ) ?? [];
 
+  const addPendingItem = useCallback((prod: { id: number; name: string; price: number }) => {
+    setPendingItems((prev) => {
+      if (prev.some((i) => i.productId === prod.id)) return prev;
+      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, productPrice: prod.price }];
+    });
+    setItemSearch("");
+  }, []);
+
+  const removePendingItem = useCallback((productId: number) => {
+    setPendingItems((prev) => prev.filter((i) => i.productId !== productId));
+  }, []);
+
+  const updatePendingQty = useCallback((productId: number, delta: number) => {
+    setPendingItems((prev) =>
+      prev
+        .map((i) => i.productId === productId ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i)
+        .filter((i) => i.quantity > 0)
+    );
+  }, []);
+
   const openCreate = useCallback(() => {
     setEditingCombo(null);
+    setPendingItems([]);
+    setItemSearch("");
     form.reset({ name: "", description: "", imageUrl: "", price: 0, active: true, featured: false });
     setIsModalOpen(true);
   }, [form]);
@@ -266,10 +304,22 @@ export default function CombosPage() {
         }
       );
     } else {
-      createMutation.mutate(payload, {
-        onSuccess: () => { toast.success("Combo criado"); setIsModalOpen(false); },
-        onError: () => toast.error("Erro ao criar combo"),
-      });
+      createMutation.mutate(
+        {
+          ...payload,
+          items: pendingItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        } as any,
+        {
+          onSuccess: () => {
+            const msg = pendingItems.length > 0
+              ? `Combo criado com ${pendingItems.length} produto(s)`
+              : "Combo criado";
+            toast.success(msg);
+            setIsModalOpen(false);
+          },
+          onError: () => toast.error("Erro ao criar combo"),
+        }
+      );
     }
   };
 
@@ -558,6 +608,101 @@ export default function CombosPage() {
                   </FormItem>
                 )} />
               </div>
+
+              {!editingCombo && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                      Produtos do Combo
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  {pendingItems.length > 0 && (
+                    <div className="space-y-1.5">
+                      {pendingItems.map((item) => (
+                        <div
+                          key={item.productId}
+                          className="flex items-center justify-between py-1.5 px-2.5 bg-background/40 rounded-lg border border-border text-xs"
+                        >
+                          <span className="font-medium text-foreground truncate flex-1">{item.productName}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-muted-foreground">{formatCurrency(item.productPrice)}</span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => updatePendingQty(item.productId, -1)}
+                                className="h-5 w-5 rounded flex items-center justify-center border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="text-xs font-semibold w-4 text-center tabular-nums">{item.quantity}</span>
+                              <button
+                                type="button"
+                                onClick={() => updatePendingQty(item.productId, 1)}
+                                className="h-5 w-5 rounded flex items-center justify-center border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removePendingItem(item.productId)}
+                              className="text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <MinusCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    <Input
+                      value={itemSearch}
+                      onChange={(e) => setItemSearch(e.target.value)}
+                      placeholder="Buscar e adicionar produtos..."
+                      className="h-8 text-xs pl-8"
+                    />
+                  </div>
+
+                  {searchableProducts && searchableProducts.length > 0 && itemSearch && (
+                    <div className="max-h-36 overflow-y-auto space-y-0.5 rounded-lg border border-border bg-background/30 p-1.5">
+                      {searchableProducts.map((prod) => {
+                        const inList = pendingItems.some((i) => i.productId === prod.id);
+                        return (
+                          <div
+                            key={prod.id}
+                            className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${
+                              inList ? "opacity-40" : "hover:bg-muted/40 cursor-pointer"
+                            }`}
+                            onClick={() => !inList && addPendingItem(prod)}
+                          >
+                            <span className="text-xs flex-1 font-medium text-foreground truncate">{prod.name}</span>
+                            <span className="text-[11px] text-muted-foreground shrink-0">{formatCurrency(prod.price)}</span>
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 ${
+                              inList
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-primary/10 text-primary"
+                            }`}>
+                              {inList ? "✓" : "+ Adicionar"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {pendingItems.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground text-center py-0.5">
+                      Opcional — você também pode gerenciar itens após criar o combo.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {editingCombo && (
                 <div className="pt-2">

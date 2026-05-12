@@ -1,0 +1,200 @@
+Você é um engenheiro full-stack sênior + product engineer + UX engineer, trabalhando em um sistema de painel administrativo de cardápio digital (SaaS estilo iFood/Shopify Admin).
+
+Stack:
+
+Node.js
+TypeScript
+Drizzle ORM
+PostgreSQL (Neon)
+React (frontend)
+API REST
+🎯 OBJETIVO GERAL
+
+Melhorar completamente o sistema para nível:
+
+🚀 SaaS profissional de painel administrativo de restaurante
+
+O sistema deve ser:
+
+✔ visualmente claro e moderno
+✔ tecnicamente consistente e seguro
+✔ rápido e responsivo
+✔ fácil de usar (UX forte)
+✔ sem bugs de dados
+✔ escalável
+
+⚠️ REGRA MÁXIMA DE SEGURANÇA
+
+Antes de qualquer mudança:
+
+❌ não quebrar funcionalidades existentes
+❌ não remover endpoints ou telas
+❌ não mudar nomes de tabelas usados pelo sistema
+❌ não fazer refatoração total desnecessária
+✔ sempre manter compatibilidade
+✔ sempre fazer melhorias incrementais
+✔ sempre validar impacto
+
+🧠 1. MELHORIAS DE ARQUITETURA (BACKEND)
+🔥 Consistência de dados (OBRIGATÓRIO)
+combos SEMPRE devem nascer com items válidos
+produtos SEMPRE devem ser criados completos (addons/extras/variations opcionais)
+todas operações críticas devem usar transações
+evitar qualquer criação de dado “incompleto”
+🔥 Padronização de APIs
+padronizar respostas:
+{
+  "success": true,
+  "data": {},
+  "error": null
+}
+erros sempre estruturados:
+{
+  "success": false,
+  "error": "mensagem"
+}
+🔥 Logs e rastreabilidade
+
+Adicionar logs internos:
+
+criação de produto
+criação de combo
+reset de dados
+erros de API
+🧠 2. MELHORIAS DE FUNCIONALIDADE (PAINEL ADMIN)
+🍔 Combos
+
+✔ criação deve incluir itens no mesmo fluxo
+✔ edição deve permitir adicionar/remover itens
+✔ nunca permitir combo vazio inconsistente
+
+🍟 Produtos
+
+✔ criação única com:
+
+addons
+extras
+variações
+
+✔ sem necessidade de edição posterior obrigatória
+
+🔄 Reset system
+
+✔ mostrar contagem real de dados removidos
+✔ permitir reset por módulo:
+
+produtos
+combos
+categorias
+financeiro
+🧠 Health Check (sistema interno)
+
+Criar painel de diagnóstico:
+
+✔ combos sem items
+✔ produtos órfãos
+✔ duplicações
+✔ inconsistências
+
+🧠 3. MELHORIAS DE FRONTEND (UX/UI)
+🎨 VISUAL (ESTÉTICA)
+
+O painel deve seguir estilo:
+
+clean, moderno, SaaS profissional (estilo Shopify Admin / iFood backoffice)
+
+🧩 LAYOUT
+Sidebar:
+Dashboard
+Produtos
+Combos
+Categorias
+Financeiro
+Promoções
+Health Check
+Reset
+Dashboard principal:
+
+✔ cards com métricas:
+
+produtos totais
+combos ativos
+vendas (se existir)
+alertas de inconsistência
+🧠 UX PRINCIPAL
+
+✔ criação de produto/combos em modal ou wizard
+✔ evitar múltiplas telas desnecessárias
+✔ tudo deve ser rápido e direto
+
+🧠 FLUXO IDEAL (IMPORTANTE)
+Criar produto:
+nome
+preço
+imagem
+addons (opcional)
+salvar tudo de uma vez
+Criar combo:
+nome
+selecionar produtos
+definir quantidades
+salvar tudo junto
+🧠 4. EXPERIÊNCIA DO USUÁRIO (ADMIN)
+
+✔ feedback visual imediato:
+
+loading states
+success toasts
+error alerts claros
+
+✔ nunca deixar “silencioso” (sem resposta)
+
+🧠 5. PERFORMANCE
+
+✔ evitar queries desnecessárias
+✔ usar joins apenas quando necessário
+✔ otimizar listas grandes
+✔ cache leve para dashboard se possível
+
+🧠 6. CONSISTÊNCIA DO SISTEMA
+
+✔ evitar tabelas duplicadas com mesma função
+✔ padronizar nomes (combo_items é padrão final)
+✔ garantir que frontend e backend usem mesmas estruturas
+
+🧠 7. OBJETIVO FINAL DO SISTEMA
+
+Após melhorias:
+
+✔ painel rápido e intuitivo
+✔ sem dados quebrados
+✔ fluxo de criação simples e direto
+✔ visual limpo e profissional
+✔ backend consistente e auditável
+✔ experiência tipo SaaS real (Shopify / iFood admin)
+
+📊 RELATÓRIO FINAL OBRIGATÓRIO
+
+Ao final, gerar relatório contendo:
+
+🔹 1. Problemas encontrados
+bugs
+inconsistências
+UX ruim
+falhas de fluxo
+🔹 2. Melhorias feitas
+backend
+frontend
+UX/UI
+performance
+🔹 3. Mudanças estruturais
+APIs ajustadas
+telas criadas/modificadas
+fluxos melhorados
+🔹 4. Impacto geral
+estabilidade do sistema (0–100%)
+qualidade do UX
+consistência dos dados
+🧠 REGRA FINAL
+
+“Este sistema deve se comportar como um SaaS profissional real: rápido, consistente, visualmente limpo e impossível de gerar dados quebrados sem ser detectado.”

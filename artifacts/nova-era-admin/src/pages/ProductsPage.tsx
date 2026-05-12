@@ -406,6 +406,10 @@ export default function ProductsPage() {
   const [extraInputPrice, setExtraInputPrice] = useState("");
   const createExtraMutation = useCreateProductExtra();
 
+  const [pendingRemovals, setPendingRemovals] = useState<{ name: string }[]>([]);
+  const [removalInputName, setRemovalInputName] = useState("");
+  const createIngredientMutation = useCreateProductIngredient();
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: { name: "", description: "", price: 0, categoryId: undefined, stock: 0, imageUrl: "", active: true, featured: false, prepTime: undefined, internalNotes: "" },
@@ -416,6 +420,8 @@ export default function ProductsPage() {
     setPendingExtras([]);
     setExtraInputName("");
     setExtraInputPrice("");
+    setPendingRemovals([]);
+    setRemovalInputName("");
     form.reset({ name: "", description: "", price: 0, categoryId: categories?.[0]?.id || undefined, stock: 0, imageUrl: "", active: true, featured: false, prepTime: undefined, internalNotes: "" });
     setIsModalOpen(true);
   }, [form, categories]);
@@ -460,17 +466,26 @@ export default function ProductsPage() {
         { data: payload as any },
         {
           onSuccess: async (product) => {
-            if (pendingExtras.length > 0) {
+            const pid = (product as any).id;
+            const hasExtras = pendingExtras.length > 0;
+            const hasRemovals = pendingRemovals.length > 0;
+            if (hasExtras || hasRemovals) {
               try {
-                await Promise.all(
-                  pendingExtras.map((ex) =>
-                    createExtraMutation.mutateAsync({ productId: (product as any).id, name: ex.name, price: ex.price })
-                  )
-                );
-                toast.success(`Produto criado com ${pendingExtras.length} adicional(is)`);
+                await Promise.all([
+                  ...pendingExtras.map((ex) =>
+                    createExtraMutation.mutateAsync({ productId: pid, name: ex.name, price: ex.price })
+                  ),
+                  ...pendingRemovals.map((r) =>
+                    createIngredientMutation.mutateAsync({ productId: pid, name: r.name })
+                  ),
+                ]);
+                const parts: string[] = [];
+                if (hasExtras) parts.push(`${pendingExtras.length} adicional(is)`);
+                if (hasRemovals) parts.push(`${pendingRemovals.length} remoção(ões)`);
+                toast.success(`Produto criado com ${parts.join(" e ")}`);
               } catch {
                 toast.success("Produto criado");
-                toast.warning("Alguns adicionais falharam ao salvar");
+                toast.warning("Alguns itens de personalização falharam ao salvar");
               }
             } else {
               toast.success("Produto criado com sucesso");
@@ -866,6 +881,71 @@ export default function ProductsPage() {
                         setPendingExtras((p) => [...p, { name: n, price: parseFloat(extraInputPrice) || 0 }]);
                         setExtraInputName("");
                         setExtraInputPrice("");
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {!editingProduct && (
+                <div className="md:col-span-2 space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">Remoções (opcional)</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    Ingredientes que o cliente pode pedir para remover. Não alteram o preço.
+                  </p>
+
+                  {pendingRemovals.length > 0 && (
+                    <div className="space-y-1.5">
+                      {pendingRemovals.map((r, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-1.5 px-2.5 bg-red-500/5 rounded-lg border border-red-500/15 text-xs">
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <span className="text-[10px] font-bold text-red-400 bg-red-500/10 rounded px-1 shrink-0">−</span>
+                            <span className="font-medium text-foreground truncate">{r.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPendingRemovals((p) => p.filter((_, i) => i !== idx))}
+                            className="text-muted-foreground hover:text-destructive transition-colors shrink-0 ml-2"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Input
+                      value={removalInputName}
+                      onChange={(e) => setRemovalInputName(e.target.value)}
+                      placeholder="Ex: sem cebola, sem tomate, sem picles..."
+                      className="h-8 text-xs flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const n = removalInputName.trim();
+                          if (!n) return;
+                          setPendingRemovals((p) => [...p, { name: n }]);
+                          setRemovalInputName("");
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 gap-1 shrink-0 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/30"
+                      onClick={() => {
+                        const n = removalInputName.trim();
+                        if (!n) return;
+                        setPendingRemovals((p) => [...p, { name: n }]);
+                        setRemovalInputName("");
                       }}
                     >
                       <Plus className="h-3.5 w-3.5" />

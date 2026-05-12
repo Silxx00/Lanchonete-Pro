@@ -22,9 +22,30 @@ export function useResetLogs() {
   });
 }
 
+export interface ResetCounts {
+  categoriesDeleted?: number;
+  productsDeleted?: number;
+  ordersDeleted?: number;
+  orderItemsDeleted?: number;
+  orderItemOptionsDeleted?: number;
+  productOptionsDeleted?: number;
+  productExtrasDeleted?: number;
+  productIngredientsDeleted?: number;
+  combosDeleted?: number;
+  comboItemsDeleted?: number;
+  expensesDeleted?: number;
+  cashClosingsDeleted?: number;
+  promotionsDeleted?: number;
+}
+
+export interface ResetResult {
+  message: string;
+  counts?: ResetCounts;
+}
+
 export function useExecuteReset() {
   const qc = useQueryClient();
-  return useMutation<{ message: string }, Error, ResetType>({
+  return useMutation<ResetResult, Error, ResetType>({
     mutationFn: (type) => apiFetch(`/api/reset/${type}`, { method: "POST" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["reset-logs"] });

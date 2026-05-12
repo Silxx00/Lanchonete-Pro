@@ -45,7 +45,19 @@ export function useCombo(id: number | null) {
 
 export function useCreateCombo() {
   const qc = useQueryClient();
-  return useMutation<Combo, Error, { name: string; description?: string | null; imageUrl?: string | null; price: number; active?: boolean; featured?: boolean }>({
+  return useMutation<
+    Combo,
+    Error,
+    {
+      name: string;
+      description?: string | null;
+      imageUrl?: string | null;
+      price: number;
+      active?: boolean;
+      featured?: boolean;
+      items?: { productId: number; quantity: number }[];
+    }
+  >({
     mutationFn: (data) => apiFetch("/api/combos", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
   });

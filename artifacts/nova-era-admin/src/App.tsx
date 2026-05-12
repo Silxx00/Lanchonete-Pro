@@ -20,6 +20,7 @@ const UsersPage = lazy(() => import("@/pages/UsersPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const ResetPage = lazy(() => import("@/pages/ResetPage"));
 const CombosPage = lazy(() => import("@/pages/CombosPage"));
+const SystemHealthPage = lazy(() => import("@/pages/SystemHealthPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -138,6 +139,9 @@ function AnimatedRoutes() {
           </Route>
           <Route path="/reset">
             <ProtectedRoute component={ResetPage} minRole="gerente" />
+          </Route>
+          <Route path="/system-health">
+            <ProtectedRoute component={SystemHealthPage} minRole="gerente" />
           </Route>
           <Route>
             <Suspense fallback={<PageLoader />}>

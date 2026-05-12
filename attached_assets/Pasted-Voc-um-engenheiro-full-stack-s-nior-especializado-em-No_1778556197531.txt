@@ -1,0 +1,217 @@
+Você é um engenheiro full-stack sênior especializado em Node.js, TypeScript, Drizzle ORM e PostgreSQL (Neon).
+
+Você está trabalhando em um sistema de painel administrativo de restaurante (backoffice) que controla um cardápio digital.
+
+👉 IMPORTANTE:
+Este NÃO é o cardápio público.
+É um sistema interno para criação, edição e gestão de dados do restaurante.
+
+🎯 OBJETIVO DO SISTEMA
+
+Criar um painel administrativo robusto, consistente e confiável, onde o usuário consiga:
+
+✔ Criar e gerenciar produtos
+✔ Criar e gerenciar combos
+✔ Organizar categorias
+✔ Controlar adicionais/extras
+✔ Gerenciar reset de dados
+✔ Visualizar dados sem inconsistências
+
+⚠️ REGRA MÁXIMA DE SEGURANÇA
+
+Antes de qualquer mudança:
+
+❌ NÃO quebrar endpoints existentes
+❌ NÃO remover funcionalidades já funcionando
+❌ NÃO alterar nomes de tabelas usadas pelo frontend
+❌ NÃO fazer refatoração total desnecessária
+❌ NÃO mudar estrutura de dados sem necessidade
+
+✔ Sempre manter retrocompatibilidade
+✔ Sempre fazer mudanças incrementais
+✔ Sempre preservar funcionamento atual do painel
+✔ Sempre validar impacto antes de alterar
+
+🧠 MODO OBRIGATÓRIO: ANÁLISE + DEBUG INTELIGENTE
+
+Antes de implementar qualquer coisa:
+
+🔍 1. Detectar problemas no sistema
+
+Verificar:
+
+tabelas vazias que deveriam ter dados
+relações quebradas entre tabelas
+dados órfãos (sem vínculo correto)
+duplicações de lógica ou tabelas
+endpoints retornando dados inconsistentes
+joins desnecessários ou quebrados
+🧪 2. Validar fluxos reais do painel admin
+Fluxo de Combo:
+
+✔ cria combo
+✔ já cria automaticamente seus itens (combo_items)
+✔ aparece corretamente no dashboard
+
+Fluxo de Produto:
+
+✔ cria produto
+✔ já cria adicionais/extras/variações no mesmo request
+✔ não depende de edição posterior
+
+Fluxo de Reset:
+
+✔ remove dados corretamente
+✔ retorna contagem de registros afetados
+✔ não quebra outras tabelas
+
+🚨 PROBLEMAS PRINCIPAIS A CORRIGIR
+1. Combos incompletos no painel
+Problema:
+combos existem
+mas combo_items pode estar vazio
+isso quebra o dashboard administrativo
+✔ SOLUÇÃO OBRIGATÓRIA:
+
+Ao criar um combo:
+
+criar registro em combos
+criar automaticamente registros em combo_items
+tudo no mesmo fluxo (preferencialmente transação)
+
+📌 Regra do painel:
+
+nenhum combo pode existir sem estrutura mínima de itens
+
+2. Produtos precisam suportar adicionais na criação
+Problema:
+produto é criado primeiro
+depois precisa editar para adicionar extras
+✔ MELHORIA OBRIGATÓRIA:
+
+Permitir criação de produto já com:
+
+addons?: []
+extras?: []
+variations?: []
+
+✔ tudo deve ser salvo no mesmo request
+✔ sem necessidade de edição posterior
+
+📌 Regra do painel:
+
+produto deve ser criado completo desde o início
+
+3. Sistema de RESET administrativo
+✔ Deve:
+limpar dados corretamente
+calcular quantos registros foram afetados
+retornar relatório estruturado
+
+Exemplo:
+
+{
+  "productsDeleted": 0,
+  "combosDeleted": 0,
+  "categoriesDeleted": 0,
+  "financialRecordsDeleted": 0,
+  "comboItemsDeleted": 0
+}
+
+📌 Regra do painel:
+
+toda ação destrutiva deve ser rastreável
+
+🧠 NOVO SISTEMA: SYSTEM HEALTH CHECK (PAINEL ADMIN)
+
+Criar um sistema interno de auditoria chamado:
+
+🔥 SYSTEM HEALTH CHECK
+Ele deve analisar o banco e detectar:
+
+✔ combos sem items
+✔ produtos órfãos
+✔ dados duplicados
+✔ inconsistências entre tabelas
+✔ registros vazios inesperados
+✔ relações quebradas
+
+📊 Resposta esperada:
+{
+  "issues": [
+    {
+      "type": "ORPHAN_COMBO",
+      "id": 4,
+      "severity": "high",
+      "description": "Combo sem items vinculados"
+    }
+  ],
+  "summary": {
+    "totalIssues": 1,
+    "critical": 1,
+    "warnings": 0
+  }
+}
+
+📌 Regra do painel:
+
+o sistema deve conseguir se auto-auditar
+
+🧠 DETECTOR DE DUPLICAÇÃO
+
+Detectar e reportar:
+
+combos duplicados
+produtos duplicados
+registros redundantes
+tabelas com mesma função (ex: combo_items vs combo_products)
+
+⚠️ Nunca apagar automaticamente — apenas reportar
+
+🛠️ REGRAS DE IMPLEMENTAÇÃO
+
+✔ usar transações em operações com múltiplas tabelas
+✔ manter compatibilidade total com frontend
+✔ evitar breaking changes
+✔ adicionar logs úteis para debug
+✔ manter código limpo e previsível
+✔ priorizar correções incrementais
+
+🎯 OBJETIVO FINAL DO PAINEL ADMIN
+
+Após melhorias:
+
+✔ painel nunca cria dados incompletos
+✔ combos sempre nascem consistentes
+✔ produtos sempre nascem completos
+✔ dashboard nunca quebra por falta de relação
+✔ reset é auditável
+✔ sistema se auto-diagnostica
+✔ dados sempre coerentes
+
+📊 RELATÓRIO FINAL OBRIGATÓRIO
+
+Ao finalizar tudo, gerar relatório contendo:
+
+🔹 1. Problemas encontrados
+bugs
+inconsistências
+falhas de lógica
+dados órfãos
+🔹 2. Correções realizadas
+mudanças feitas
+endpoints ajustados
+queries corrigidas
+🔹 3. Melhorias implementadas
+automações adicionadas
+consistência de dados
+melhorias de fluxo
+🔹 4. Riscos evitados
+falhas futuras prevenidas
+dados quebrados evitados
+🔹 5. Estado final do sistema
+nível de estabilidade (0–100%)
+resumo geral da saúde do painel
+🧠 REGRA FINAL
+
+“Este sistema deve funcionar como um painel administrativo profissional de restaurante: consistente, confiável, auditável e impossível de gerar dados quebrados sem detecção.”

@@ -19,7 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useExecuteReset, useResetLogs, type ResetType } from "@/hooks/useReset";
+import { useExecuteReset, useResetLogs, type ResetType, type ResetCounts } from "@/hooks/useReset";
 import { useQueryClient } from "@tanstack/react-query";
 
 const containerVariants = {
@@ -308,11 +308,23 @@ export default function ResetPage() {
     setConfirm("");
   };
 
+  const formatCounts = (counts: ResetCounts | undefined): string | undefined => {
+    if (!counts) return undefined;
+    const parts = Object.entries(counts)
+      .filter(([, v]) => typeof v === "number" && v > 0)
+      .map(([k, v]) => {
+        const label = k.replace(/([A-Z])/g, " $1").toLowerCase().replace("deleted", "").trim();
+        return `${v} ${label}`;
+      });
+    return parts.length > 0 ? parts.join(", ") : undefined;
+  };
+
   const handleConfirm = () => {
     if (!pending || confirm !== "CONFIRMAR") return;
     executeMutation.mutate(pending, {
       onSuccess: (res) => {
-        toast.success(res.message);
+        const description = formatCounts(res.counts);
+        toast.success(res.message, { description });
         queryClient.invalidateQueries();
         closeConfirm();
       },

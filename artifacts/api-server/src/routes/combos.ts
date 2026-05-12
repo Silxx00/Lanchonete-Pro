@@ -8,6 +8,11 @@ import { auditLog } from "../lib/audit";
 
 const router: IRouter = Router();
 
+const CreateComboItemInlineBody = z.object({
+  productId: z.coerce.number().int().positive(),
+  quantity: z.coerce.number().int().min(1).default(1),
+});
+
 const CreateComboBody = z.object({
   name: z.string().min(1, "Nome obrigatório"),
   description: z.string().nullish(),
@@ -15,6 +20,7 @@ const CreateComboBody = z.object({
   price: z.coerce.number().min(0).default(0),
   active: z.boolean().optional().default(true),
   featured: z.boolean().optional().default(false),
+  items: z.array(CreateComboItemInlineBody).optional().default([]),
 });
 
 const UpdateComboBody = z.object({
@@ -149,16 +155,57 @@ router.post("/combos", requireAuth, requireAdminOrManager, async (req: AuthReque
   try {
     const parsed = CreateComboBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-    const [combo] = await db.insert(combosTable).values({
-      name: parsed.data.name.trim(),
-      description: parsed.data.description?.trim() ?? null,
-      imageUrl: parsed.data.imageUrl?.trim() ?? null,
-      price: String(parsed.data.price),
-      active: parsed.data.active ?? true,
-      featured: parsed.data.featured ?? false,
-    }).returning();
-    await auditLog({ userId: req.user!.sub, userEmail: req.user!.email, action: "create", entity: "combo", entityId: combo.id, details: { name: combo.name }, req });
-    res.status(201).json(fmtCombo(combo, []));
+
+    const result = await db.transaction(async (tx) => {
+      const [combo] = await tx.insert(combosTable).values({
+        name: parsed.data.name.trim(),
+        description: parsed.data.description?.trim() ?? null,
+        imageUrl: parsed.data.imageUrl?.trim() ?? null,
+        price: String(parsed.data.price),
+        active: parsed.data.active ?? true,
+        featured: parsed.data.featured ?? false,
+      }).returning();
+
+      const itemsToCreate = parsed.data.items ?? [];
+      let createdItems: (typeof comboItemsTable.$inferSelect)[] = [];
+
+      if (itemsToCreate.length > 0) {
+        const productIds = itemsToCreate.map((i) => i.productId);
+        const products = await tx
+          .select({ id: productsTable.id, name: productsTable.name, price: productsTable.price })
+          .from(productsTable)
+          .where(inArray(productsTable.id, productIds));
+        const productMap = new Map(products.map((p) => [p.id, p]));
+
+        createdItems = await tx.insert(comboItemsTable).values(
+          itemsToCreate.map((item) => ({
+            comboId: combo.id,
+            productId: item.productId,
+            productName: productMap.get(item.productId)?.name ?? "Produto removido",
+            quantity: item.quantity,
+          }))
+        ).returning();
+
+        // Attach price for response
+        const itemsWithPrice = createdItems.map((i) => ({
+          ...i,
+          productPrice: i.productId != null
+            ? parseFloat(productMap.get(i.productId)?.price ?? "0")
+            : null,
+        }));
+        return { combo, items: itemsWithPrice };
+      }
+
+      return { combo, items: [] };
+    });
+
+    await auditLog({
+      userId: req.user!.sub, userEmail: req.user!.email, action: "create",
+      entity: "combo", entityId: result.combo.id,
+      details: { name: result.combo.name, itemsCount: result.items.length }, req,
+    });
+    logger.info({ id: result.combo.id, itemsCount: result.items.length }, "Combo criado com sucesso");
+    res.status(201).json(fmtCombo(result.combo, result.items));
   } catch (err) {
     logger.error({ err }, "Erro ao criar combo");
     res.status(500).json({ error: "Erro interno ao criar combo" });

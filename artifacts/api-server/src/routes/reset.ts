@@ -76,9 +76,13 @@ router.post(
   async (req: AuthRequest, res) => {
     try {
       await db.execute(sql`UPDATE products SET category_id = NULL`);
-      await db.delete(categoriesTable);
-      await logReset(req.user?.id, req.user?.email, "categories", { message: "Categorias resetadas" }, req.ip);
-      res.json({ message: "Categorias resetadas com sucesso" });
+      const deleted = await db.delete(categoriesTable).returning({ id: categoriesTable.id });
+      const counts = { categoriesDeleted: deleted.length };
+      await logReset(
+        req.user?.id, req.user?.email, "categories",
+        { message: "Categorias resetadas", ...counts }, req.ip,
+      );
+      res.json({ message: "Categorias resetadas com sucesso", counts });
     } catch (err) {
       logger.error({ err }, "Erro ao resetar categorias");
       res.status(500).json({ error: "Erro ao resetar categorias" });
@@ -93,11 +97,19 @@ router.post(
   requireAdminOrManager,
   async (req: AuthRequest, res) => {
     try {
-      await db.delete(orderItemOptionsTable);
-      await db.delete(orderItemsTable);
-      await db.delete(ordersTable);
-      await logReset(req.user?.id, req.user?.email, "orders", { message: "Pedidos resetados" }, req.ip);
-      res.json({ message: "Pedidos resetados com sucesso" });
+      const optionsDeleted = await db.delete(orderItemOptionsTable).returning({ id: orderItemOptionsTable.id });
+      const itemsDeleted = await db.delete(orderItemsTable).returning({ id: orderItemsTable.id });
+      const ordersDeleted = await db.delete(ordersTable).returning({ id: ordersTable.id });
+      const counts = {
+        ordersDeleted: ordersDeleted.length,
+        orderItemsDeleted: itemsDeleted.length,
+        orderItemOptionsDeleted: optionsDeleted.length,
+      };
+      await logReset(
+        req.user?.id, req.user?.email, "orders",
+        { message: "Pedidos resetados", ...counts }, req.ip,
+      );
+      res.json({ message: "Pedidos resetados com sucesso", counts });
     } catch (err) {
       logger.error({ err }, "Erro ao resetar pedidos");
       res.status(500).json({ error: "Erro ao resetar pedidos" });
@@ -113,23 +125,36 @@ router.post(
   async (req: AuthRequest, res) => {
     try {
       // 1. Dependências de order_items
-      await db.delete(orderItemOptionsTable);
-      await db.delete(orderItemsTable);
-      await db.delete(ordersTable);
+      const orderItemOptionsDeleted = await db.delete(orderItemOptionsTable).returning({ id: orderItemOptionsTable.id });
+      const orderItemsDeleted = await db.delete(orderItemsTable).returning({ id: orderItemsTable.id });
+      const ordersDeleted = await db.delete(ordersTable).returning({ id: ordersTable.id });
 
       // 2. Combo items que referenciam produto (set null para não quebrar combos)
       await db.execute(sql`UPDATE combo_items SET product_id = NULL, product_name = 'Produto removido' WHERE product_id IS NOT NULL`);
 
-      // 3. Personalização do produto (cascade já cuidaria, mas sendo explícito)
-      await db.delete(productOptionsTable);
-      await db.delete(productExtrasTable);
-      await db.delete(productIngredientsTable);
+      // 3. Personalização do produto
+      const optionsDeleted = await db.delete(productOptionsTable).returning({ id: productOptionsTable.id });
+      const extrasDeleted = await db.delete(productExtrasTable).returning({ id: productExtrasTable.id });
+      const ingredientsDeleted = await db.delete(productIngredientsTable).returning({ id: productIngredientsTable.id });
 
       // 4. Produtos
-      await db.delete(productsTable);
+      const productsDeleted = await db.delete(productsTable).returning({ id: productsTable.id });
 
-      await logReset(req.user?.id, req.user?.email, "products", { message: "Produtos resetados" }, req.ip);
-      res.json({ message: "Produtos resetados com sucesso" });
+      const counts = {
+        productsDeleted: productsDeleted.length,
+        ordersDeleted: ordersDeleted.length,
+        orderItemsDeleted: orderItemsDeleted.length,
+        orderItemOptionsDeleted: orderItemOptionsDeleted.length,
+        productOptionsDeleted: optionsDeleted.length,
+        productExtrasDeleted: extrasDeleted.length,
+        productIngredientsDeleted: ingredientsDeleted.length,
+      };
+
+      await logReset(
+        req.user?.id, req.user?.email, "products",
+        { message: "Produtos resetados", ...counts }, req.ip,
+      );
+      res.json({ message: "Produtos resetados com sucesso", counts });
     } catch (err) {
       logger.error({ err }, "Erro ao resetar produtos");
       res.status(500).json({ error: "Erro ao resetar produtos" });
@@ -144,10 +169,17 @@ router.post(
   requireAdminOrManager,
   async (req: AuthRequest, res) => {
     try {
-      await db.delete(comboItemsTable);
-      await db.delete(combosTable);
-      await logReset(req.user?.id, req.user?.email, "combos", { message: "Combos resetados" }, req.ip);
-      res.json({ message: "Combos resetados com sucesso" });
+      const itemsDeleted = await db.delete(comboItemsTable).returning({ id: comboItemsTable.id });
+      const combosDeleted = await db.delete(combosTable).returning({ id: combosTable.id });
+      const counts = {
+        combosDeleted: combosDeleted.length,
+        comboItemsDeleted: itemsDeleted.length,
+      };
+      await logReset(
+        req.user?.id, req.user?.email, "combos",
+        { message: "Combos resetados", ...counts }, req.ip,
+      );
+      res.json({ message: "Combos resetados com sucesso", counts });
     } catch (err) {
       logger.error({ err }, "Erro ao resetar combos");
       res.status(500).json({ error: "Erro ao resetar combos" });
@@ -162,10 +194,17 @@ router.post(
   requireAdminOrManager,
   async (req: AuthRequest, res) => {
     try {
-      await db.delete(expensesTable);
-      await db.delete(cashClosingsTable);
-      await logReset(req.user?.id, req.user?.email, "financial", { message: "Financeiro resetado" }, req.ip);
-      res.json({ message: "Financeiro resetado com sucesso" });
+      const expensesDeleted = await db.delete(expensesTable).returning({ id: expensesTable.id });
+      const closingsDeleted = await db.delete(cashClosingsTable).returning({ id: cashClosingsTable.id });
+      const counts = {
+        expensesDeleted: expensesDeleted.length,
+        cashClosingsDeleted: closingsDeleted.length,
+      };
+      await logReset(
+        req.user?.id, req.user?.email, "financial",
+        { message: "Financeiro resetado", ...counts }, req.ip,
+      );
+      res.json({ message: "Financeiro resetado com sucesso", counts });
     } catch (err) {
       logger.error({ err }, "Erro ao resetar financeiro");
       res.status(500).json({ error: "Erro ao resetar financeiro" });
@@ -180,9 +219,13 @@ router.post(
   requireAdminOrManager,
   async (req: AuthRequest, res) => {
     try {
-      await db.delete(promotionsTable);
-      await logReset(req.user?.id, req.user?.email, "promotions", { message: "Promoções resetadas" }, req.ip);
-      res.json({ message: "Promoções resetadas com sucesso" });
+      const promoDeleted = await db.delete(promotionsTable).returning({ id: promotionsTable.id });
+      const counts = { promotionsDeleted: promoDeleted.length };
+      await logReset(
+        req.user?.id, req.user?.email, "promotions",
+        { message: "Promoções resetadas", ...counts }, req.ip,
+      );
+      res.json({ message: "Promoções resetadas com sucesso", counts });
     } catch (err) {
       logger.error({ err }, "Erro ao resetar promoções");
       res.status(500).json({ error: "Erro ao resetar promoções" });

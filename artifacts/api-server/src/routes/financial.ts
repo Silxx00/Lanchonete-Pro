@@ -1,11 +1,12 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { and, gte, lt, lte, eq, desc, sql } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "../db";
 import { ordersTable, expensesTable, cashClosingsTable } from "../db";
 import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
+import { logger } from "../lib/logger";
 
-const router = Router();
+const router: IRouter = Router();
 
 export const EXPENSE_CATEGORIES = [
   "Fornecedores", "Funcionários", "Aluguel", "Energia", "Água",
@@ -97,7 +98,7 @@ router.get("/financial/summary", requireAuth, requireAdminOrManager, async (req:
 
     res.json({ year, month, grossRevenue, totalExpenses, netProfit, orderCount, margin: +margin.toFixed(2) });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao buscar resumo financeiro");
     res.status(500).json({ error: "Erro ao buscar resumo financeiro" });
   }
 });
@@ -106,34 +107,37 @@ router.get("/financial/summary", requireAuth, requireAdminOrManager, async (req:
 router.get("/financial/monthly-chart", requireAuth, requireAdminOrManager, async (_req: AuthRequest, res) => {
   try {
     const now = new Date();
-    const results = [];
 
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthRanges = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
       const year = d.getFullYear();
       const month = d.getMonth() + 1;
-      const { start, end } = getMonthRange(year, month);
+      return { year, month, ...getMonthRange(year, month) };
+    });
 
-      const [rev, exp] = await Promise.all([
-        db.select({ v: sql<string>`COALESCE(SUM(${ordersTable.total}), 0)` })
-          .from(ordersTable).where(and(eq(ordersTable.status, "delivered"), gte(ordersTable.createdAt, start), lt(ordersTable.createdAt, end))),
-        db.select({ v: sql<string>`COALESCE(SUM(${expensesTable.amount}), 0)` })
-          .from(expensesTable).where(and(gte(expensesTable.date, start), lt(expensesTable.date, end))),
-      ]);
+    const results = await Promise.all(
+      monthRanges.map(async ({ start, end }) => {
+        const [rev, exp] = await Promise.all([
+          db.select({ v: sql<string>`COALESCE(SUM(${ordersTable.total}), 0)` })
+            .from(ordersTable).where(and(eq(ordersTable.status, "delivered"), gte(ordersTable.createdAt, start), lt(ordersTable.createdAt, end))),
+          db.select({ v: sql<string>`COALESCE(SUM(${expensesTable.amount}), 0)` })
+            .from(expensesTable).where(and(gte(expensesTable.date, start), lt(expensesTable.date, end))),
+        ]);
 
-      const revenue = parseFloat(rev[0]?.v ?? "0");
-      const expenses = parseFloat(exp[0]?.v ?? "0");
-      results.push({
-        month: start.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
-        revenue,
-        expenses,
-        profit: revenue - expenses,
-      });
-    }
+        const revenue = parseFloat(rev[0]?.v ?? "0");
+        const expenses = parseFloat(exp[0]?.v ?? "0");
+        return {
+          month: start.toLocaleDateString("pt-BR", { month: "short", year: "2-digit", timeZone: "UTC" }),
+          revenue,
+          expenses,
+          profit: revenue - expenses,
+        };
+      })
+    );
 
     res.json(results);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao buscar gráfico mensal");
     res.status(500).json({ error: "Erro ao buscar gráfico mensal" });
   }
 });
@@ -165,7 +169,7 @@ router.get("/financial/expenses", requireAuth, requireAdminOrManager, async (req
 
     res.json({ data: data.map(fmtExpense), total: parseInt(countRow[0]?.v ?? "0"), page, limit });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao listar despesas");
     res.status(500).json({ error: "Erro ao listar despesas" });
   }
 });
@@ -184,7 +188,7 @@ router.post("/financial/expenses", requireAuth, requireAdminOrManager, async (re
 
     res.status(201).json(fmtExpense(row));
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao criar despesa");
     res.status(500).json({ error: "Erro ao criar despesa" });
   }
 });
@@ -210,7 +214,7 @@ router.patch("/financial/expenses/:id", requireAuth, requireAdminOrManager, asyn
 
     res.json(fmtExpense(row));
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao atualizar despesa");
     res.status(500).json({ error: "Erro ao atualizar despesa" });
   }
 });
@@ -226,7 +230,7 @@ router.delete("/financial/expenses/:id", requireAuth, requireAdminOrManager, asy
 
     res.status(204).send();
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao excluir despesa");
     res.status(500).json({ error: "Erro ao excluir despesa" });
   }
 });
@@ -237,7 +241,7 @@ router.get("/financial/cash-closings", requireAuth, requireAdminOrManager, async
     const rows = await db.select().from(cashClosingsTable).orderBy(desc(cashClosingsTable.createdAt)).limit(20);
     res.json(rows.map(fmtClosing));
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao listar fechamentos" );
     res.status(500).json({ error: "Erro ao listar fechamentos" });
   }
 });
@@ -289,7 +293,7 @@ router.post("/financial/cash-closings", requireAuth, requireAdminOrManager, asyn
 
     res.status(201).json(fmtClosing(row));
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao criar fechamento de caixa");
     res.status(500).json({ error: "Erro ao criar fechamento de caixa" });
   }
 });
@@ -339,7 +343,7 @@ router.get("/financial/insights", requireAuth, requireAdminOrManager, async (_re
       availableCategories: EXPENSE_CATEGORIES,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Erro ao gerar insights financeiros");
     res.status(500).json({ error: "Erro ao gerar insights financeiros" });
   }
 });

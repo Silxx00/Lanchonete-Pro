@@ -8,7 +8,7 @@
  * Designed for the digital menu / ordering flow.
  */
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   db,
   productsTable,
@@ -35,7 +35,7 @@ router.get("/products/:id/personalization", requireAuth, async (req, res): Promi
 
     const [ingredients, extras, options] = await Promise.all([
       db.select().from(productIngredientsTable)
-        .where(eq(productIngredientsTable.productId, productId))
+        .where(and(eq(productIngredientsTable.productId, productId), eq(productIngredientsTable.active, true)))
         .orderBy(productIngredientsTable.name),
       db.select().from(productExtrasTable)
         .where(eq(productExtrasTable.productId, productId))

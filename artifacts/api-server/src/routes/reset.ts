@@ -79,7 +79,7 @@ router.post(
       const deleted = await db.delete(categoriesTable).returning({ id: categoriesTable.id });
       const counts = { categoriesDeleted: deleted.length };
       await logReset(
-        req.user?.id, req.user?.email, "categories",
+        req.user?.sub, req.user?.email, "categories",
         { message: "Categorias resetadas", ...counts }, req.ip,
       );
       res.json({ message: "Categorias resetadas com sucesso", counts });
@@ -106,7 +106,7 @@ router.post(
         orderItemOptionsDeleted: optionsDeleted.length,
       };
       await logReset(
-        req.user?.id, req.user?.email, "orders",
+        req.user?.sub, req.user?.email, "orders",
         { message: "Pedidos resetados", ...counts }, req.ip,
       );
       res.json({ message: "Pedidos resetados com sucesso", counts });
@@ -151,7 +151,7 @@ router.post(
       };
 
       await logReset(
-        req.user?.id, req.user?.email, "products",
+        req.user?.sub, req.user?.email, "products",
         { message: "Produtos resetados", ...counts }, req.ip,
       );
       res.json({ message: "Produtos resetados com sucesso", counts });
@@ -176,7 +176,7 @@ router.post(
         comboItemsDeleted: itemsDeleted.length,
       };
       await logReset(
-        req.user?.id, req.user?.email, "combos",
+        req.user?.sub, req.user?.email, "combos",
         { message: "Combos resetados", ...counts }, req.ip,
       );
       res.json({ message: "Combos resetados com sucesso", counts });
@@ -201,7 +201,7 @@ router.post(
         cashClosingsDeleted: closingsDeleted.length,
       };
       await logReset(
-        req.user?.id, req.user?.email, "financial",
+        req.user?.sub, req.user?.email, "financial",
         { message: "Financeiro resetado", ...counts }, req.ip,
       );
       res.json({ message: "Financeiro resetado com sucesso", counts });
@@ -222,7 +222,7 @@ router.post(
       const promoDeleted = await db.delete(promotionsTable).returning({ id: promotionsTable.id });
       const counts = { promotionsDeleted: promoDeleted.length };
       await logReset(
-        req.user?.id, req.user?.email, "promotions",
+        req.user?.sub, req.user?.email, "promotions",
         { message: "Promoções resetadas", ...counts }, req.ip,
       );
       res.json({ message: "Promoções resetadas com sucesso", counts });

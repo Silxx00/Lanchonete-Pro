@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 
-export type ResetType = "categories" | "orders" | "products" | "financial" | "promotions";
+export type ResetType = "categories" | "orders" | "products" | "financial" | "promotions" | "combos";
 
 export interface ResetLog {
   id: number;

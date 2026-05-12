@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   ShieldAlert, RotateCcw, Tags, Package, ShoppingCart,
   DollarSign, TicketPercent, AlertTriangle, CheckCircle2,
-  Trash2, Clock, User, Loader2, ChevronDown, ChevronUp,
+  Trash2, Clock, User, Loader2, ChevronDown, ChevronUp, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +37,7 @@ const ENTITY_LABELS: Record<string, string> = {
   orders: "Pedidos",
   financial: "Financeiro",
   promotions: "Promoções",
+  combos: "Combos",
 };
 
 const ENTITY_COLORS: Record<string, string> = {
@@ -45,6 +46,7 @@ const ENTITY_COLORS: Record<string, string> = {
   orders: "text-cyan-400",
   financial: "text-red-400",
   promotions: "text-purple-400",
+  combos: "text-emerald-400",
 };
 
 interface ResetCard {
@@ -110,6 +112,16 @@ const RESET_CARDS: ResetCard[] = [
     subtitle: "Remove todas as promoções ativas e inativas",
     deletes: ["Promoções ativas", "Promoções inativas", "Descontos cadastrados"],
     preserves: ["Produtos", "Categorias", "Pedidos", "Usuários", "Financeiro"],
+  },
+  {
+    type: "combos",
+    icon: Layers,
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-400",
+    title: "Resetar Combos",
+    subtitle: "Remove todos os combos e seus itens",
+    deletes: ["Todos os combos", "Itens de cada combo"],
+    preserves: ["Produtos", "Categorias", "Pedidos", "Usuários", "Financeiro", "Promoções"],
   },
 ];
 

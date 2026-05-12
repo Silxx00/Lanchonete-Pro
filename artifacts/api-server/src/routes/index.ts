@@ -12,6 +12,7 @@ import financialRouter from "./financial";
 import resetRouter from "./reset";
 import optionsRouter from "./options";
 import combosRouter from "./combos";
+import personalizationRouter from "./personalization";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(dashboardRouter);
 router.use(financialRouter);
 router.use(resetRouter);
 router.use(combosRouter);
+router.use(personalizationRouter);
 
 export default router;

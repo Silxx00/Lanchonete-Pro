@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Edit, Trash2, Package, Layers, Search, MoreVertical,
   CheckCircle2, XCircle, Star, Loader2, ImageIcon, ChevronDown,
-  ChevronUp, MinusCircle,
+  ChevronUp, MinusCircle, Minus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -45,13 +45,15 @@ import {
   useUpdateCombo,
   useDeleteCombo,
   useAddComboItem,
+  useUpdateComboItem,
   useDeleteComboItem,
   type Combo,
+  type ComboItem,
 } from "@/hooks/useCombos";
 import { useListProducts } from "@workspace/api-client-react";
 import { useDebounce } from "@/hooks/useDebounce";
 
-// ── Validation ────────────────────────────────────────────────────────────────
+// ── Validation ─────────────────────────────────────────────────────────────────
 const comboSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional().nullable(),
@@ -62,11 +64,55 @@ const comboSchema = z.object({
 });
 type ComboFormValues = z.infer<typeof comboSchema>;
 
-// ── Combo Items Manager ───────────────────────────────────────────────────────
+// ── Qty stepper for a combo item ────────────────────────────────────────────────
+function QtyStepper({ item, comboId }: { item: ComboItem; comboId: number }) {
+  const updateItem = useUpdateComboItem();
+  const deleteItem = useDeleteComboItem();
+
+  const change = (delta: number) => {
+    const next = item.quantity + delta;
+    if (next <= 0) {
+      deleteItem.mutate(
+        { comboId, itemId: item.id },
+        { onError: () => toast.error("Erro ao remover item") }
+      );
+    } else {
+      updateItem.mutate(
+        { comboId, itemId: item.id, quantity: next },
+        { onError: () => toast.error("Erro ao atualizar quantidade") }
+      );
+    }
+  };
+
+  const busy = updateItem.isPending || deleteItem.isPending;
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => change(-1)}
+        disabled={busy}
+        className="h-5 w-5 rounded flex items-center justify-center border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors disabled:opacity-40"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <span className="text-xs font-semibold w-5 text-center tabular-nums">{item.quantity}</span>
+      <button
+        type="button"
+        onClick={() => change(1)}
+        disabled={busy}
+        className="h-5 w-5 rounded flex items-center justify-center border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-40"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+// ── Combo Items Manager ────────────────────────────────────────────────────────
 function ComboItemsManager({ combo }: { combo: Combo }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [qty, setQty] = useState<Record<number, number>>({});
   const debouncedSearch = useDebounce(search, 350);
 
   const { data: products } = useListProducts(
@@ -74,21 +120,18 @@ function ComboItemsManager({ combo }: { combo: Combo }) {
     { query: { enabled: open } }
   );
   const addItem = useAddComboItem();
-  const deleteItem = useDeleteComboItem();
 
   const handleAdd = (productId: number, productName: string) => {
-    const quantity = qty[productId] || 1;
     addItem.mutate(
-      { comboId: combo.id, productId, quantity },
+      { comboId: combo.id, productId, quantity: 1 },
       {
-        onSuccess: () => {
-          setQty((prev) => ({ ...prev, [productId]: 1 }));
-          toast.success(`${productName} adicionado ao combo`);
-        },
+        onSuccess: () => toast.success(`${productName} adicionado`),
         onError: () => toast.error("Erro ao adicionar produto"),
       }
     );
   };
+
+  const alreadyInCombo = new Set(combo.items.map((i) => i.productId).filter(Boolean));
 
   return (
     <div className="rounded-xl border border-border bg-muted/10">
@@ -106,29 +149,20 @@ function ComboItemsManager({ combo }: { combo: Combo }) {
 
       {open && (
         <div className="px-4 pb-4 space-y-4 border-t border-border pt-3">
-          {/* Current items */}
+          {/* Current items with qty stepper */}
           {combo.items.length === 0 ? (
             <p className="text-xs text-muted-foreground py-1">Nenhum item adicionado ainda.</p>
           ) : (
             <div className="space-y-1.5">
               {combo.items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between py-1.5 px-2.5 bg-background/40 rounded-lg border border-border text-xs">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-primary border-primary/30">
-                      {item.quantity}x
-                    </Badge>
-                    <span className="font-medium text-foreground">{item.productName}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => deleteItem.mutate(
-                      { comboId: combo.id, itemId: item.id },
-                      { onError: () => toast.error("Erro ao remover item") }
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="font-medium text-foreground truncate">{item.productName}</span>
+                    {item.productPrice != null && (
+                      <span className="text-muted-foreground shrink-0">{formatCurrency(item.productPrice)}</span>
                     )}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
-                  >
-                    <MinusCircle className="h-3.5 w-3.5" />
-                  </button>
+                  </div>
+                  <QtyStepper item={item} comboId={combo.id} />
                 </div>
               ))}
             </div>
@@ -147,29 +181,26 @@ function ComboItemsManager({ combo }: { combo: Combo }) {
               />
             </div>
             {products && products.length > 0 && (
-              <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg border border-border bg-background/30 p-1.5">
-                {products.map((prod) => (
-                  <div key={prod.id} className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/40 transition-colors">
-                    <span className="text-xs flex-1 font-medium text-foreground truncate">{prod.name}</span>
-                    <span className="text-[11px] text-muted-foreground shrink-0">{formatCurrency(prod.price)}</span>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={qty[prod.id] ?? 1}
-                      onChange={(e) => setQty((prev) => ({ ...prev, [prod.id]: Number(e.target.value) || 1 }))}
-                      className="h-6 w-12 text-xs text-center p-0 px-1"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-6 px-2 text-[10px] gap-1"
-                      onClick={() => handleAdd(prod.id, prod.name)}
-                      disabled={addItem.isPending}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
+              <div className="max-h-44 overflow-y-auto space-y-1 rounded-lg border border-border bg-background/30 p-1.5">
+                {products.map((prod) => {
+                  const inCombo = alreadyInCombo.has(prod.id);
+                  return (
+                    <div key={prod.id} className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${inCombo ? "opacity-40" : "hover:bg-muted/40"}`}>
+                      <span className="text-xs flex-1 font-medium text-foreground truncate">{prod.name}</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{formatCurrency(prod.price)}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={inCombo ? "outline" : "default"}
+                        className="h-6 px-2 text-[10px] gap-1 shrink-0"
+                        onClick={() => !inCombo && handleAdd(prod.id, prod.name)}
+                        disabled={addItem.isPending || inCombo}
+                      >
+                        {inCombo ? "✓" : <><Plus className="h-3 w-3" /></>}
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -179,7 +210,7 @@ function ComboItemsManager({ combo }: { combo: Combo }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────────────────────────
 export default function CombosPage() {
   const { data: combos, isLoading } = useCombos();
   const createMutation = useCreateCombo();
@@ -403,20 +434,32 @@ export default function CombosPage() {
                       </DropdownMenu>
                     </div>
 
-                    {/* Items summary */}
+                    {/* Items summary — shows qty×name+price inline */}
                     {combo.items.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="space-y-1">
                         {combo.items.map((item) => (
-                          <Badge key={item.id} variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-border">
-                            {item.quantity}× {item.productName}
-                          </Badge>
+                          <div key={item.id} className="flex items-center justify-between text-[11px]">
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-primary border-primary/30 font-semibold">
+                                {item.quantity}×
+                              </Badge>
+                              <span className="text-foreground/80 font-medium">{item.productName}</span>
+                            </div>
+                            {item.productPrice != null && (
+                              <span className="text-muted-foreground">{formatCurrency(item.productPrice)}</span>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
 
                     <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
                       <span className="text-base font-bold text-primary">{formatCurrency(combo.price)}</span>
-                      <span className="text-xs text-muted-foreground">{combo.items.length} {combo.items.length === 1 ? "item" : "itens"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {combo.itemCount} {combo.itemCount === 1 ? "unidade" : "unidades"}
+                        {" · "}
+                        {combo.items.length} {combo.items.length === 1 ? "item" : "itens"}
+                      </span>
                     </div>
 
                     <ComboItemsManager combo={combo} />
@@ -531,8 +574,15 @@ export default function CombosPage() {
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={createMutation.isPending || updateMutation.isPending} className="gap-2">
-                  {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="gap-2"
+                >
+                  {(createMutation.isPending || updateMutation.isPending) && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  )}
                   {editingCombo ? "Salvar Alterações" : "Criar Combo"}
                 </Button>
               </DialogFooter>

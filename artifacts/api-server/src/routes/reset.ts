@@ -4,14 +4,24 @@ import {
   db,
   categoriesTable,
   productsTable,
+  productOptionsTable,
+  productExtrasTable,
+  productIngredientsTable,
   orderItemsTable,
+  orderItemOptionsTable,
   ordersTable,
   expensesTable,
   cashClosingsTable,
   promotionsTable,
   auditLogsTable,
+  comboItemsTable,
+  combosTable,
 } from "../db";
-import { requireAuth, requireAdminOrManager, type AuthRequest } from "../middleware/auth";
+import {
+  requireAuth,
+  requireAdminOrManager,
+  type AuthRequest,
+} from "../middleware/auth";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -37,92 +47,147 @@ async function logReset(
   }
 }
 
-// ── GET /api/reset/logs ────────────────────────────────────────────────────────
-router.get("/api/reset/logs", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    const logs = await db
-      .select()
-      .from(auditLogsTable)
-      .where(eq(auditLogsTable.action, "SYSTEM_RESET"))
-      .orderBy(desc(auditLogsTable.createdAt))
-      .limit(50);
-    res.json(logs);
-  } catch (err) {
-    logger.error({ err }, "Erro ao buscar logs de reset");
-    res.status(500).json({ error: "Erro ao buscar logs de reset" });
-  }
-});
+// ── LOGS ─────────────────────────────────────────────
+router.get(
+  "/reset/logs",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      const logs = await db
+        .select()
+        .from(auditLogsTable)
+        .where(eq(auditLogsTable.action, "SYSTEM_RESET"))
+        .orderBy(desc(auditLogsTable.createdAt))
+        .limit(50);
+      res.json(logs);
+    } catch (err) {
+      logger.error({ err }, "Erro ao buscar logs de reset");
+      res.status(500).json({ error: "Erro ao buscar logs de reset" });
+    }
+  },
+);
 
-// ── POST /api/reset/categories ────────────────────────────────────────────────
-router.post("/api/reset/categories", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    await db.execute(sql`UPDATE products SET category_id = NULL`);
-    await db.delete(categoriesTable);
-    await logReset(req.user?.id, req.user?.email, "categories", { message: "Todas as categorias foram removidas" }, req.ip);
-    logger.info({ userId: req.user?.id, email: req.user?.email }, "RESET: categories");
-    res.json({ message: "Categorias resetadas com sucesso" });
-  } catch (err) {
-    logger.error({ err }, "Erro ao resetar categorias");
-    res.status(500).json({ error: "Erro ao resetar categorias" });
-  }
-});
+// ── CATEGORIES ───────────────────────────────────────
+router.post(
+  "/reset/categories",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      await db.execute(sql`UPDATE products SET category_id = NULL`);
+      await db.delete(categoriesTable);
+      await logReset(req.user?.id, req.user?.email, "categories", { message: "Categorias resetadas" }, req.ip);
+      res.json({ message: "Categorias resetadas com sucesso" });
+    } catch (err) {
+      logger.error({ err }, "Erro ao resetar categorias");
+      res.status(500).json({ error: "Erro ao resetar categorias" });
+    }
+  },
+);
 
-// ── POST /api/reset/orders ────────────────────────────────────────────────────
-router.post("/api/reset/orders", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    await db.delete(orderItemsTable);
-    await db.delete(ordersTable);
-    await logReset(req.user?.id, req.user?.email, "orders", { message: "Todos os pedidos e itens foram removidos" }, req.ip);
-    logger.info({ userId: req.user?.id, email: req.user?.email }, "RESET: orders");
-    res.json({ message: "Pedidos resetados com sucesso" });
-  } catch (err) {
-    logger.error({ err }, "Erro ao resetar pedidos");
-    res.status(500).json({ error: "Erro ao resetar pedidos" });
-  }
-});
+// ── ORDERS ───────────────────────────────────────────
+router.post(
+  "/reset/orders",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      await db.delete(orderItemOptionsTable);
+      await db.delete(orderItemsTable);
+      await db.delete(ordersTable);
+      await logReset(req.user?.id, req.user?.email, "orders", { message: "Pedidos resetados" }, req.ip);
+      res.json({ message: "Pedidos resetados com sucesso" });
+    } catch (err) {
+      logger.error({ err }, "Erro ao resetar pedidos");
+      res.status(500).json({ error: "Erro ao resetar pedidos" });
+    }
+  },
+);
 
-// ── POST /api/reset/products ──────────────────────────────────────────────────
-router.post("/api/reset/products", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    // order_items.productId is NOT NULL FK — must delete dependents first
-    await db.delete(orderItemsTable);
-    await db.delete(ordersTable);
-    // product_extras and product_ingredients have onDelete: cascade via FK
-    await db.delete(productsTable);
-    await logReset(req.user?.id, req.user?.email, "products", { message: "Produtos, adicionais, ingredientes e pedidos removidos" }, req.ip);
-    logger.info({ userId: req.user?.id, email: req.user?.email }, "RESET: products");
-    res.json({ message: "Produtos resetados com sucesso" });
-  } catch (err) {
-    logger.error({ err }, "Erro ao resetar produtos");
-    res.status(500).json({ error: "Erro ao resetar produtos" });
-  }
-});
+// ── PRODUCTS (COMPLETO COM TODAS AS DEPENDÊNCIAS) ────
+router.post(
+  "/reset/products",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      // 1. Dependências de order_items
+      await db.delete(orderItemOptionsTable);
+      await db.delete(orderItemsTable);
+      await db.delete(ordersTable);
 
-// ── POST /api/reset/financial ─────────────────────────────────────────────────
-router.post("/api/reset/financial", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    await db.delete(expensesTable);
-    await db.delete(cashClosingsTable);
-    await logReset(req.user?.id, req.user?.email, "financial", { message: "Despesas e fechamentos de caixa removidos" }, req.ip);
-    logger.info({ userId: req.user?.id, email: req.user?.email }, "RESET: financial");
-    res.json({ message: "Financeiro resetado com sucesso" });
-  } catch (err) {
-    logger.error({ err }, "Erro ao resetar financeiro");
-    res.status(500).json({ error: "Erro ao resetar financeiro" });
-  }
-});
+      // 2. Combo items que referenciam produto (set null para não quebrar combos)
+      await db.execute(sql`UPDATE combo_items SET product_id = NULL, product_name = 'Produto removido' WHERE product_id IS NOT NULL`);
 
-// ── POST /api/reset/promotions ────────────────────────────────────────────────
-router.post("/api/reset/promotions", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    await db.delete(promotionsTable);
-    await logReset(req.user?.id, req.user?.email, "promotions", { message: "Todas as promoções foram removidas" }, req.ip);
-    logger.info({ userId: req.user?.id, email: req.user?.email }, "RESET: promotions");
-    res.json({ message: "Promoções resetadas com sucesso" });
-  } catch (err) {
-    logger.error({ err }, "Erro ao resetar promoções");
-    res.status(500).json({ error: "Erro ao resetar promoções" });
-  }
-});
+      // 3. Personalização do produto (cascade já cuidaria, mas sendo explícito)
+      await db.delete(productOptionsTable);
+      await db.delete(productExtrasTable);
+      await db.delete(productIngredientsTable);
+
+      // 4. Produtos
+      await db.delete(productsTable);
+
+      await logReset(req.user?.id, req.user?.email, "products", { message: "Produtos resetados" }, req.ip);
+      res.json({ message: "Produtos resetados com sucesso" });
+    } catch (err) {
+      logger.error({ err }, "Erro ao resetar produtos");
+      res.status(500).json({ error: "Erro ao resetar produtos" });
+    }
+  },
+);
+
+// ── COMBOS ───────────────────────────────────────────
+router.post(
+  "/reset/combos",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      await db.delete(comboItemsTable);
+      await db.delete(combosTable);
+      await logReset(req.user?.id, req.user?.email, "combos", { message: "Combos resetados" }, req.ip);
+      res.json({ message: "Combos resetados com sucesso" });
+    } catch (err) {
+      logger.error({ err }, "Erro ao resetar combos");
+      res.status(500).json({ error: "Erro ao resetar combos" });
+    }
+  },
+);
+
+// ── FINANCIAL ────────────────────────────────────────
+router.post(
+  "/reset/financial",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      await db.delete(expensesTable);
+      await db.delete(cashClosingsTable);
+      await logReset(req.user?.id, req.user?.email, "financial", { message: "Financeiro resetado" }, req.ip);
+      res.json({ message: "Financeiro resetado com sucesso" });
+    } catch (err) {
+      logger.error({ err }, "Erro ao resetar financeiro");
+      res.status(500).json({ error: "Erro ao resetar financeiro" });
+    }
+  },
+);
+
+// ── PROMOTIONS ───────────────────────────────────────
+router.post(
+  "/reset/promotions",
+  requireAuth,
+  requireAdminOrManager,
+  async (req: AuthRequest, res) => {
+    try {
+      await db.delete(promotionsTable);
+      await logReset(req.user?.id, req.user?.email, "promotions", { message: "Promoções resetadas" }, req.ip);
+      res.json({ message: "Promoções resetadas com sucesso" });
+    } catch (err) {
+      logger.error({ err }, "Erro ao resetar promoções");
+      res.status(500).json({ error: "Erro ao resetar promoções" });
+    }
+  },
+);
 
 export default router;

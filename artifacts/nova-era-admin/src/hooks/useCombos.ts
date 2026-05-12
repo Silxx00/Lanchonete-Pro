@@ -7,6 +7,7 @@ export interface ComboItem {
   productId: number | null;
   productName: string;
   quantity: number;
+  productPrice: number | null;
 }
 
 export interface Combo {
@@ -18,6 +19,7 @@ export interface Combo {
   active: boolean;
   featured: boolean;
   items: ComboItem[];
+  itemCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,6 +71,15 @@ export function useAddComboItem() {
   const qc = useQueryClient();
   return useMutation<ComboItem, Error, { comboId: number; productId: number; quantity: number }>({
     mutationFn: ({ comboId, ...data }) => apiFetch(`/api/combos/${comboId}/items`, { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+  });
+}
+
+export function useUpdateComboItem() {
+  const qc = useQueryClient();
+  return useMutation<ComboItem, Error, { comboId: number; itemId: number; quantity: number }>({
+    mutationFn: ({ comboId, itemId, quantity }) =>
+      apiFetch(`/api/combos/${comboId}/items/${itemId}`, { method: "PATCH", body: JSON.stringify({ quantity }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
   });
 }

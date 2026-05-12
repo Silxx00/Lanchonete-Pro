@@ -31,17 +31,22 @@ const AddComboItemBody = z.object({
   quantity: z.coerce.number().int().min(1).default(1),
 });
 
-function fmtComboItem(item: typeof comboItemsTable.$inferSelect) {
+const UpdateComboItemBody = z.object({
+  quantity: z.coerce.number().int().min(1),
+});
+
+function fmtComboItem(item: typeof comboItemsTable.$inferSelect, productPrice?: number | null) {
   return {
     id: item.id,
     comboId: item.comboId,
     productId: item.productId ?? null,
     productName: item.productName,
     quantity: item.quantity,
+    productPrice: productPrice ?? null,
   };
 }
 
-function fmtCombo(combo: typeof combosTable.$inferSelect, items: typeof comboItemsTable.$inferSelect[] = []) {
+function fmtCombo(combo: typeof combosTable.$inferSelect, items: (typeof comboItemsTable.$inferSelect & { productPrice?: number | null })[] = []) {
   return {
     id: combo.id,
     name: combo.name,
@@ -50,7 +55,8 @@ function fmtCombo(combo: typeof combosTable.$inferSelect, items: typeof comboIte
     price: parseFloat(combo.price),
     active: combo.active,
     featured: combo.featured,
-    items: items.map(fmtComboItem),
+    items: items.map((i) => fmtComboItem(i, i.productPrice)),
+    itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
     createdAt: combo.createdAt.toISOString(),
     updatedAt: combo.updatedAt.toISOString(),
   };
@@ -59,8 +65,25 @@ function fmtCombo(combo: typeof combosTable.$inferSelect, items: typeof comboIte
 async function getComboWithItems(comboId: number) {
   const [combo] = await db.select().from(combosTable).where(eq(combosTable.id, comboId));
   if (!combo) return null;
-  const items = await db.select().from(comboItemsTable).where(eq(comboItemsTable.comboId, comboId));
-  return fmtCombo(combo, items);
+
+  // Join with products to get price
+  const items = await db
+    .select({
+      id: comboItemsTable.id,
+      comboId: comboItemsTable.comboId,
+      productId: comboItemsTable.productId,
+      productName: comboItemsTable.productName,
+      quantity: comboItemsTable.quantity,
+      productPrice: productsTable.price,
+    })
+    .from(comboItemsTable)
+    .leftJoin(productsTable, eq(comboItemsTable.productId, productsTable.id))
+    .where(eq(comboItemsTable.comboId, comboId));
+
+  return fmtCombo(combo, items.map((i) => ({
+    ...i,
+    productPrice: i.productPrice != null ? parseFloat(i.productPrice) : null,
+  })));
 }
 
 // GET /combos
@@ -68,16 +91,39 @@ router.get("/combos", requireAuth, async (_req, res): Promise<void> => {
   try {
     const combos = await db.select().from(combosTable).orderBy(combosTable.name);
     const comboIds = combos.map((c) => c.id);
-    const allItems = comboIds.length > 0
-      ? await db.select().from(comboItemsTable).where(inArray(comboItemsTable.comboId, comboIds))
-      : [];
+
+    if (comboIds.length === 0) {
+      res.json([]);
+      return;
+    }
+
+    const allItems = await db
+      .select({
+        id: comboItemsTable.id,
+        comboId: comboItemsTable.comboId,
+        productId: comboItemsTable.productId,
+        productName: comboItemsTable.productName,
+        quantity: comboItemsTable.quantity,
+        productPrice: productsTable.price,
+      })
+      .from(comboItemsTable)
+      .leftJoin(productsTable, eq(comboItemsTable.productId, productsTable.id))
+      .where(inArray(comboItemsTable.comboId, comboIds));
+
     const itemsByCombo = new Map<number, typeof allItems>();
     for (const item of allItems) {
       const list = itemsByCombo.get(item.comboId) ?? [];
       list.push(item);
       itemsByCombo.set(item.comboId, list);
     }
-    res.json(combos.map((c) => fmtCombo(c, itemsByCombo.get(c.id) ?? [])));
+
+    res.json(combos.map((c) => {
+      const items = (itemsByCombo.get(c.id) ?? []).map((i) => ({
+        ...i,
+        productPrice: i.productPrice != null ? parseFloat(i.productPrice) : null,
+      }));
+      return fmtCombo(c, items);
+    }));
   } catch (err) {
     logger.error({ err }, "Erro ao listar combos");
     res.status(500).json({ error: "Erro interno ao listar combos" });
@@ -160,7 +206,7 @@ router.delete("/combos/:id", requireAuth, requireAdminOrManager, async (req: Aut
   }
 });
 
-// ── Combo Items ──────────────────────────────────────────────────────────────
+// ── Combo Items ───────────────────────────────────────────────────────────────
 
 // POST /combos/:id/items
 router.post("/combos/:id/items", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
@@ -170,7 +216,7 @@ router.post("/combos/:id/items", requireAuth, requireAdminOrManager, async (req:
     const parsed = AddComboItemBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-    const [product] = await db.select({ id: productsTable.id, name: productsTable.name })
+    const [product] = await db.select({ id: productsTable.id, name: productsTable.name, price: productsTable.price })
       .from(productsTable)
       .where(eq(productsTable.id, parsed.data.productId));
 
@@ -180,9 +226,39 @@ router.post("/combos/:id/items", requireAuth, requireAdminOrManager, async (req:
       productName: product?.name ?? "Produto removido",
       quantity: parsed.data.quantity,
     }).returning();
-    res.status(201).json(fmtComboItem(item));
+
+    res.status(201).json(fmtComboItem(item, product ? parseFloat(product.price) : null));
   } catch (err) {
     logger.error({ err }, "Erro ao adicionar item ao combo");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// PATCH /combos/:id/items/:itemId  (update quantity)
+router.patch("/combos/:id/items/:itemId", requireAuth, requireAdminOrManager, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const comboId = parseInt(req.params.id);
+    const itemId = parseInt(req.params.itemId);
+    if (isNaN(comboId) || isNaN(itemId)) { res.status(400).json({ error: "ID inválido" }); return; }
+    const parsed = UpdateComboItemBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+    const [item] = await db
+      .update(comboItemsTable)
+      .set({ quantity: parsed.data.quantity })
+      .where(eq(comboItemsTable.id, itemId))
+      .returning();
+
+    if (!item) { res.status(404).json({ error: "Item não encontrado" }); return; }
+
+    // get product price for response
+    const [prod] = item.productId
+      ? await db.select({ price: productsTable.price }).from(productsTable).where(eq(productsTable.id, item.productId))
+      : [null];
+
+    res.json(fmtComboItem(item, prod ? parseFloat(prod.price) : null));
+  } catch (err) {
+    logger.error({ err }, "Erro ao atualizar item do combo");
     res.status(500).json({ error: "Erro interno" });
   }
 });

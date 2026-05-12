@@ -1,0 +1,126 @@
+Você deve aplicar melhorias e correções no sistema de cardápio digital já existente (Node.js + Express + Drizzle ORM + PostgreSQL no Neon), sem quebrar login, autenticação ou estrutura atual.
+
+🔧 1. CORREÇÃO CRÍTICA (RESET + BANCO + CONSISTÊNCIA)
+
+Corrigir e garantir que:
+
+Todas as tabelas existentes no schema realmente existem no banco Neon
+Evitar erro relation "expenses" does not exist
+Garantir que o reset.ts funcione sem falhar por ordem de dependência
+Regras obrigatórias:
+Sempre deletar primeiro tabelas dependentes (order_items, orders, etc.)
+Depois tabelas principais
+Nunca quebrar FK constraints
+Não remover login/auth system
+🧾 2. SISTEMA DE PERSONALIZAÇÃO DE PRODUTOS (ESTILO IFOOD / 99FOOD)
+
+Implementar melhoria no sistema de produtos para permitir PERSONALIZAÇÃO REAL do item pelo cliente.
+
+🎯 Objetivo:
+
+O cliente deve conseguir:
+
+➕ ADICIONAR ITENS AO PRODUTO
+carne extra
+queijo extra
+bacon
+molhos
+adicionais pagos ou grátis
+➖ REMOVER ITENS DO PRODUTO
+sem cebola
+sem tomate
+sem picles
+sem ingredientes padrão
+🧠 Estrutura atual já existe:
+product_options (ADD / REMOVE)
+product_extras
+product_ingredients
+🔥 MELHORIA NECESSÁRIA:
+
+Transformar isso em um sistema unificado de personalização:
+
+Cada produto deve ter:
+ingredientes base (removíveis)
+adicionais (add-ons pagos)
+opções de remoção (remove options)
+📌 REGRA IMPORTANTE:
+"type: add" → adiciona item
+"type: remove" → remove ingrediente base
+"type: extra" → adicional pago
+🧾 EXEMPLO FINAL NO CARDÁPIO:
+
+“Hambúrguer”
+
+Base:
+
+pão
+carne
+queijo
+cebola
+
+Cliente pode editar:
+
+remover cebola
+adicionar bacon
+adicionar carne extra
+🍔 3. SISTEMA DE COMBOS (MELHORAR COMPLETAMENTE)
+
+Corrigir e expandir o sistema de combos:
+
+🎯 Cada combo deve mostrar claramente:
+itens incluídos
+quantidade de cada item
+descrição detalhada do que vem no combo
+🔥 MELHORIA OBRIGATÓRIA:
+
+No combo_items:
+
+garantir que cada item tenha:
+productId (se existir)
+productName (backup obrigatório)
+quantity
+💡 NOVA FUNCIONALIDADE:
+
+Permitir PERSONALIZAÇÃO DE COMBO:
+
+remover item do combo
+adicionar item extra ao combo
+alterar quantidade
+📌 EXEMPLO:
+
+Combo “X-Tudo”
+
+Inclui:
+
+1 hambúrguer
+1 batata
+1 refrigerante
+
+Cliente pode:
+
+remover refrigerante
+adicionar bacon no hambúrguer
+adicionar batata extra
+🧠 4. BACKEND (IMPORTANTE)
+
+Garantir que:
+
+APIs de products suportem options (add/remove)
+combos retornem itens detalhados no GET
+pedidos armazenem personalização do cliente
+order_items tenha suporte para modifications JSON (se necessário)
+⚠️ 5. NÃO QUEBRAR:
+login / auth (refresh_tokens, users)
+sistema de permissões
+estrutura atual de orders
+frontend existente (apenas expandir API)
+🎯 RESULTADO ESPERADO:
+
+Depois das alterações:
+
+✔ Cardápio funciona completo
+✔ Produtos têm personalização estilo iFood
+✔ Combos mostram itens claros e editáveis
+✔ Cliente consegue montar pedido personalizado
+✔ Reset não quebra banco nunca
+✔ Neon não retorna erro de tabela inexistente

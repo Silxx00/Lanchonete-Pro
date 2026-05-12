@@ -10,6 +10,8 @@ import promotionsRouter from "./promotions";
 import dashboardRouter from "./dashboard";
 import financialRouter from "./financial";
 import resetRouter from "./reset";
+import optionsRouter from "./options";
+import combosRouter from "./combos";
 
 const router: IRouter = Router();
 
@@ -19,10 +21,12 @@ router.use(usersRouter);
 router.use(categoriesRouter);
 router.use(productsRouter);
 router.use(extrasRouter);
+router.use(optionsRouter);
 router.use(ordersRouter);
 router.use(promotionsRouter);
 router.use(dashboardRouter);
 router.use(financialRouter);
 router.use(resetRouter);
+router.use(combosRouter);
 
 export default router;

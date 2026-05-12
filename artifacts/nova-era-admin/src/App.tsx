@@ -19,6 +19,7 @@ const FinancialPage = lazy(() => import("@/pages/FinancialPage"));
 const UsersPage = lazy(() => import("@/pages/UsersPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const ResetPage = lazy(() => import("@/pages/ResetPage"));
+const CombosPage = lazy(() => import("@/pages/CombosPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -131,6 +132,9 @@ function AnimatedRoutes() {
           </Route>
           <Route path="/profile">
             <ProtectedRoute component={ProfilePage} />
+          </Route>
+          <Route path="/combos">
+            <ProtectedRoute component={CombosPage} minRole="gerente" />
           </Route>
           <Route path="/reset">
             <ProtectedRoute component={ResetPage} minRole="gerente" />

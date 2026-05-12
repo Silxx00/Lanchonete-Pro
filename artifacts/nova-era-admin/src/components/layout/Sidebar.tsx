@@ -13,6 +13,7 @@ import {
   User,
   TrendingUp,
   RotateCcw,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const navItems = [
   { name: "Pedidos",     href: "/orders",       icon: ShoppingCart,    minLevel: 1 },
   { name: "Produtos",    href: "/products",     icon: Package,         minLevel: 1 },
   { name: "Categorias",  href: "/categories",   icon: Tags,            minLevel: 1 },
+  { name: "Combos",      href: "/combos",       icon: Layers,          minLevel: 2 },
   { name: "Promoções",   href: "/promotions",   icon: TicketPercent,   minLevel: 2 },
   { name: "Financeiro",  href: "/financeiro",   icon: TrendingUp,      minLevel: 2 },
   { name: "Usuários",    href: "/users",        icon: Users,           minLevel: 3 },

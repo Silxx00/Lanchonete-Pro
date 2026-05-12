@@ -1,0 +1,397 @@
+OBJETIVO:
+Adicionar ao cardápio digital um sistema PROFISSIONAL e ESCALÁVEL de:
+- opcionais/adicionais/remoções
+- personalização de produtos
+- criação de combos
+
+SEM quebrar:
+- auth
+- login
+- JWT
+- products
+- categories
+- orders
+- painel admin
+- integração Neon
+- frontend atual
+
+NÃO refatorar o sistema inteiro.
+NÃO remover funcionalidades existentes.
+NÃO alterar arquitetura principal.
+NÃO mexer no login já estabilizado.
+
+==================================================
+SISTEMA DE OPCIONAIS / PERSONALIZAÇÃO
+==================================================
+
+Adicionar funcionalidade para o cliente:
+- adicionar itens
+- remover ingredientes
+- escolher adicionais
+- escrever observações
+
+Aplicável para:
+- lanches
+- porções
+- pizzas
+- sobremesas
+- açaí
+- combos
+- bebidas personalizáveis
+
+==================================================
+EXEMPLOS
+==================================================
+
+Lanche:
++ bacon
++ cheddar
+- cebola
+- picles
+
+Porção:
++ molho extra
++ bacon
++ cheddar
+
+Sobremesa:
++ cobertura
++ morango
++ granulado
+
+==================================================
+BANCO DE DADOS — OPCIONAIS
+==================================================
+
+Criar tabela:
+
+product_options
+
+Campos:
+- id
+- product_id
+- name
+- price
+- type
+- active
+- created_at
+
+Onde type:
+- add
+- remove
+- choice
+
+==================================================
+
+Criar tabela:
+
+order_item_options
+
+Campos:
+- id
+- order_item_id
+- option_name
+- option_price
+
+==================================================
+REGRAS DOS OPCIONAIS
+==================================================
+
+- adicionais podem alterar preço
+- remoções NÃO alteram preço
+- múltiplos opcionais permitidos
+- opcionais devem aparecer no resumo do pedido
+- opcionais devem aparecer no admin
+- opcionais devem salvar no Neon
+- opcionais devem ir para orders
+
+==================================================
+FRONTEND — OPCIONAIS
+==================================================
+
+Adicionar interface moderna e clean.
+
+No produto:
+- checkbox adicionais
+- checkbox remoções
+- contador de quantidade
+- observações
+
+Exemplo:
+
+Adicionar:
+☑ Bacon +4
+☑ Cheddar +3
+
+Remover:
+☑ Cebola
+☑ Picles
+
+Observação:
+"sem molho"
+
+==================================================
+ADMIN — OPCIONAIS
+==================================================
+
+No painel admin permitir:
+- criar adicional
+- editar adicional
+- remover adicional
+- ativar/desativar
+
+SEM quebrar products existente.
+
+==================================================
+API — OPCIONAIS
+==================================================
+
+Criar endpoints:
+
+GET /products/:id/options
+POST /products/:id/options
+PATCH /products/options/:id
+DELETE /products/options/:id
+
+==================================================
+SISTEMA DE COMBOS
+==================================================
+
+Adicionar área COMPLETA de criação de combos.
+
+==================================================
+EXEMPLOS DE COMBOS
+==================================================
+
+Combo 1:
+- X-Burger
+- Batata
+- Coca-Cola
+
+Combo Família:
+- 2 lanches
+- 1 porção
+- 2 bebidas
+
+Combo Sobremesa:
+- Açaí
+- Milkshake
+- Brownie
+
+==================================================
+FUNCIONALIDADES DOS COMBOS
+==================================================
+
+Cada combo deve possuir:
+- nome
+- descrição
+- imagem
+- preço promocional
+- produtos inclusos
+- quantidade de cada item
+- ativo/inativo
+- destaque
+- categoria opcional
+
+==================================================
+BANCO DE DADOS — COMBOS
+==================================================
+
+Criar tabela:
+
+combos
+
+Campos:
+- id
+- name
+- description
+- image_url
+- price
+- active
+- featured
+- created_at
+- updated_at
+
+==================================================
+
+Criar tabela:
+
+combo_items
+
+Campos:
+- id
+- combo_id
+- product_id
+- quantity
+
+==================================================
+REGRAS DOS COMBOS
+==================================================
+
+- combo pode ter múltiplos produtos
+- produto pode existir em múltiplos combos
+- excluir produto NÃO deve quebrar combos
+- combos devem calcular preço corretamente
+- combos podem receber opcionais
+- combos devem funcionar no carrinho
+- combos devem aparecer no resumo do pedido
+- combos devem salvar no Neon
+
+==================================================
+PAINEL ADMIN — COMBOS
+==================================================
+
+Adicionar seção:
+“Combos”
+
+Permitir:
+- criar combo
+- editar combo
+- excluir combo
+- ativar/desativar
+- adicionar produtos no combo
+- definir quantidade
+- upload de imagem
+- destaque
+
+==================================================
+INTERFACE ADMIN — COMBOS
+==================================================
+
+Adicionar:
+- busca de produtos
+- seleção múltipla
+- preview do combo
+- cálculo automático
+- preço promocional manual
+
+==================================================
+FRONTEND CARDÁPIO — COMBOS
+==================================================
+
+Combos devem aparecer:
+- separados dos produtos
+OU
+- em categoria própria
+
+Exibir:
+- imagem
+- itens inclusos
+- economia
+- preço promocional
+
+==================================================
+CARRINHO
+==================================================
+
+Combos devem:
+- adicionar todos os itens internamente
+- manter opcionais
+- calcular total correto
+- permitir quantidade
+
+==================================================
+API — COMBOS
+==================================================
+
+Criar endpoints:
+
+GET /combos
+GET /combos/:id
+POST /combos
+PATCH /combos/:id
+DELETE /combos/:id
+
+==================================================
+IMPORTANTE SOBRE AUTH / LOGIN
+==================================================
+
+NÃO mexer em:
+- auth.ts
+- JWT
+- middleware auth
+- refresh token
+- verifyPassword
+- requireAuth
+- roles
+- login
+
+NÃO remover:
+
+import { verifyPassword } from "../lib/password";
+
+O login já foi corrigido anteriormente.
+NÃO refatorar auth.
+
+==================================================
+VALIDAÇÕES
+==================================================
+
+Garantir compatibilidade:
+- frontend
+- backend
+- zod
+- drizzle
+- neon
+
+Usar:
+- z.coerce.number()
+quando necessário.
+
+Evitar:
+- undefined
+- null inválido
+- erro 500
+- conflitos de tipo
+- incompatibilidade de schema
+
+==================================================
+ESTABILIDADE
+==================================================
+
+Antes de finalizar:
+- verificar duplicações
+- verificar imports
+- verificar tipagem
+- verificar endpoints
+- verificar integração Neon
+- verificar products
+- verificar categories
+- verificar orders
+- verificar combos
+- verificar opcionais
+
+==================================================
+OTIMIZAÇÃO
+==================================================
+
+Melhorar:
+- organização
+- logs
+- tratamento de erro
+- UI clean
+- performance
+- responsividade
+
+SEM alterar arquitetura principal.
+
+==================================================
+RELATÓRIO FINAL OBRIGATÓRIO
+==================================================
+
+Ao terminar:
+1. listar todos arquivos alterados
+2. listar tabelas criadas
+3. confirmar que auth NÃO foi alterado
+4. confirmar que verifyPassword continua intacto
+5. confirmar que JWT não foi alterado
+6. confirmar que middleware auth não foi alterado
+7. confirmar que products continua funcionando
+8. confirmar que categories continua funcionando
+9. confirmar que orders continua funcionando
+10. confirmar que opcionais funciona
+11. confirmar que combos funciona
+12. confirmar compatibilidade Neon
+13. confirmar ausência de erros TypeScript
+14. confirmar ausência de erros 500
+15. confirmar ausência de duplicações ou regressões

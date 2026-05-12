@@ -66,6 +66,12 @@ import {
   useCreateProductIngredient,
   useDeleteProductIngredient,
 } from "@/hooks/useProductIngredients";
+import {
+  useProductOptions,
+  useCreateProductOption,
+  useDeleteProductOption,
+  type OptionType,
+} from "@/hooks/useProductOptions";
 
 const productSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -237,6 +243,136 @@ function IngredientsSection({ productId }: { productId: number }) {
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
             />
             <Button type="button" size="sm" className="h-8 px-3 text-xs gap-1" onClick={handleAdd} disabled={createIngredient.isPending}>
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const OPTION_TYPE_LABELS: Record<OptionType, string> = {
+  add: "Adicionar",
+  remove: "Remover",
+  choice: "Escolha",
+};
+
+const OPTION_TYPE_COLORS: Record<OptionType, string> = {
+  add: "text-emerald-400 border-emerald-500/30 bg-emerald-500/8",
+  remove: "text-red-400 border-red-500/30 bg-red-500/8",
+  choice: "text-blue-400 border-blue-500/30 bg-blue-500/8",
+};
+
+function OptionsSection({ productId }: { productId: number }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [type, setType] = useState<OptionType>("add");
+
+  const { data: options, isLoading } = useProductOptions(productId);
+  const createOption = useCreateProductOption();
+  const deleteOption = useDeleteProductOption();
+
+  const handleAdd = () => {
+    const n = name.trim();
+    const p = type === "remove" ? 0 : (parseFloat(price) || 0);
+    if (!n) { toast.error("Nome do opcional obrigatório"); return; }
+    createOption.mutate(
+      { productId, name: n, price: p, type },
+      {
+        onSuccess: () => { setName(""); setPrice(""); toast.success("Opcional criado"); },
+        onError: () => toast.error("Erro ao criar opcional"),
+      }
+    );
+  };
+
+  const grouped = {
+    add: options?.filter((o) => o.type === "add") ?? [],
+    remove: options?.filter((o) => o.type === "remove") ?? [],
+    choice: options?.filter((o) => o.type === "choice") ?? [],
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/10">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"
+      >
+        <span>Opcionais ({options?.length ?? 0})</span>
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando...
+            </div>
+          ) : !options?.length ? (
+            <p className="text-xs text-muted-foreground py-1">Nenhum opcional cadastrado.</p>
+          ) : (
+            <div className="space-y-3">
+              {(["add", "remove", "choice"] as OptionType[]).map((t) =>
+                grouped[t].length > 0 ? (
+                  <div key={t}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1.5 ${OPTION_TYPE_COLORS[t].split(" ")[0]}`}>
+                      {OPTION_TYPE_LABELS[t]}
+                    </p>
+                    <div className="space-y-1">
+                      {grouped[t].map((opt) => (
+                        <div key={opt.id} className={`flex items-center justify-between py-1.5 px-2.5 rounded-lg border text-xs ${OPTION_TYPE_COLORS[t]}`}>
+                          <span className="font-medium">{opt.name}</span>
+                          <div className="flex items-center gap-2">
+                            {opt.type !== "remove" && <span className="opacity-70">{opt.price > 0 ? formatCurrency(opt.price) : "Grátis"}</span>}
+                            <button
+                              type="button"
+                              onClick={() => deleteOption.mutate(
+                                { productId, optionId: opt.id },
+                                { onError: () => toast.error("Erro ao remover opcional") }
+                              )}
+                              className="opacity-60 hover:opacity-100 hover:text-destructive transition-colors p-0.5"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null
+              )}
+            </div>
+          )}
+          <div className="flex gap-2 pt-1 flex-wrap">
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as OptionType)}
+              className="h-8 text-xs rounded-md border border-border bg-background px-2 text-foreground"
+            >
+              <option value="add">+ Adicionar</option>
+              <option value="remove">− Remover</option>
+              <option value="choice">Escolha</option>
+            </select>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nome do opcional"
+              className="h-8 text-xs flex-1 min-w-24"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
+            />
+            {type !== "remove" && (
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="Preço"
+                className="h-8 text-xs w-20"
+              />
+            )}
+            <Button type="button" size="sm" className="h-8 px-3 text-xs gap-1" onClick={handleAdd} disabled={createOption.isPending}>
               <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -652,6 +788,7 @@ export default function ProductsPage() {
                   </div>
                   <ExtrasSection productId={editingProduct.id} />
                   <IngredientsSection productId={editingProduct.id} />
+                  <OptionsSection productId={editingProduct.id} />
                 </div>
               )}
 
